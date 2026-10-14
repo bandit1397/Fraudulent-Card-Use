@@ -75,6 +75,8 @@ function guideCheck(label, inp) {
   var ctx = G.ctx(inp, r), g = G.build(ctx), errs = [];
   r.findings.forEach(function (f) {
     if (f.status === "apply" && f.law && !G.factKey(f, ctx)) errs.push("범죄사실 문안 없음: " + f.law + (f.useType ? ":" + f.useType : ""));
+    if (f.status === "review" && f.law && LAWS[f.law].penal !== false && !G.factKey(f, ctx)) errs.push("검토 죄명 문안 없음: " + f.law + (f.useType ? ":" + f.useType : ""));
+    if (f.law && LAWS[f.law].penal === false && G.factKey(f, ctx)) errs.push("형벌 아닌 항목에 문안: " + f.law);
   });
   if (!g.actions.length) errs.push("현장 조치 없음");
   if (!g.victim.length || !g.suspect.length) errs.push("질문 목록 없음");

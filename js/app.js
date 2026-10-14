@@ -138,17 +138,18 @@
       precButtons(f.precs) + "</div>";
   }
 
-  // 적용 죄명 문안을 먼저, 그다음 '검토' 항목 문안 (keys.review 에 표시)
+  // 적용 죄명 문안을 먼저, 그다음 '검토' 죄명 문안. 문안마다 관련 결과(유의사항용)를 묶는다
   function factKeys(r, ctx) {
     var keys = [];
     keys.review = {};
+    keys.findings = {};
     ["apply", "review"].forEach(function (st) {
       r.findings.forEach(function (f) {
         if (f.status !== st || !f.law) return;
         var k = G.factKey(f, ctx);
-        // '검토' 항목은 그 상황 전용 문안(조항:상황)이 있을 때만 — 일반 문안은 사실관계가 어긋날 수 있다
-        if (st === "review" && k && k.indexOf(":") < 0) k = null;
-        if (k && keys.indexOf(k) < 0) { keys.push(k); if (st === "review") keys.review[k] = true; }
+        if (!k) return;
+        if (keys.indexOf(k) < 0) { keys.push(k); keys.findings[k] = []; if (st === "review") keys.review[k] = true; }
+        keys.findings[k].push(f);
       });
     });
     return keys;
@@ -158,15 +159,34 @@
     return tpl.replace(/\{([^}]+)\}/g, function (_, k) { return (S.fields[k] || "").trim() || defaults[k] || "○○"; });
   }
 
+  // 문안 아래 유의사항: 검토 죄명은 검토 이유 · 메모 · 근거 판례, 적용 죄명은 메모가 있을 때만
+  function cautionHtml(k, keys) {
+    var items = [], precs = [];
+    var add = function (x) { if (x && items.indexOf(x) < 0) items.push(x); };
+    keys.findings[k].forEach(function (f) {
+      if (keys.review[k]) add(f.reason);
+      f.notes.forEach(add);
+      f.precs.forEach(function (p) { if (precs.indexOf(p) < 0) precs.push(p); });
+    });
+    if (keys.review[k]) add("현장에서 확정하지 말고 수사팀 · 검사와 협의한 뒤 적용 여부를 정할 것");
+    if (!items.length) return "";
+    return '<div class="caution' + (keys.review[k] ? " review" : "") + '"><b>유의사항</b><ul>' +
+      items.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" + precButtons(precs) + "</div>";
+  }
+
   function factsHtml(keys, defaults) {
-    if (!keys.length) return '<p class="basis">적용 죄명이 확정되면 문안 템플릿이 표시됩니다. (‘검토’ 항목은 수사팀 판단 후 작성)</p>';
+    if (!keys.length) return '<p class="basis">적용 · 검토 죄명이 나오면 문안 템플릿이 표시됩니다.</p>';
     var F = [["일시", "예: 2026. 10. 14. 14:30"], ["장소", "예: 서울 ○○구 ○○로 12"], ["상호", "가맹점 · 은행명"], ["명의자", "명의자 · 피해자"], ["카드", defaults["카드"] || "예: ○○카드 신용카드"], ["금액", "예: 35,000"], ["횟수", "예: 5"], ["물품", "예: 담배 등"]];
     var fields = '<div class="fields">' + F.map(function (x) {
       return '<div><label for="f-' + x[0] + '">' + x[0] + '</label><input id="f-' + x[0] + '" data-f="' + x[0] + '" placeholder="' + esc(x[1]) + '" value="' + esc(S.fields[x[0]] || "") + '"></div>';
     }).join("") + "</div>";
     var body = keys.map(function (k, i) {
-      var law = k.split(":")[0];
-      return '<div class="fact-head"><span>' + (i + 1) + ". " + esc(L[law].name) + (keys.review[k] ? ' <span class="badge b-review">검토 — 적용 시</span>' : "") + '</span><button type="button" class="copy" data-i="' + i + '">복사</button></div><div class="fact" id="fact-' + i + '">' + esc(factText(G.facts[k], defaults)) + "</div>";
+      var f0 = keys.findings[k][0];
+      var name = keys.review[k] ? (f0.title || L[f0.law].name) : L[f0.law].name;
+      // 같은 죄명이 여러 사용 행위에 나올 때 구분되도록 행위 이름을 붙인다
+      if (f0.useType && E.USES[f0.useType]) name += " — " + E.USES[f0.useType].split(" (")[0];
+      return '<div class="fact-head"><span>' + (i + 1) + ". " + esc(name) + (keys.review[k] ? ' <span class="badge b-review">검토</span>' : ' <span class="badge b-apply">적용</span>') + '</span><button type="button" class="copy" data-i="' + i + '">복사</button></div>' +
+        '<div class="fact" id="fact-' + i + '">' + esc(factText(G.facts[k], defaults)) + "</div>" + cautionHtml(k, keys);
     }).join("");
     return fields + body + '<p class="basis">' + esc(G.factsBasis) + "</p>";
   }
@@ -183,11 +203,21 @@
     var keys = factKeys(r, ctx);
     var defaults = G.defaults(ctx);
 
-    var tags = r.summary.length
+    // 검토 죄명: 이미 적용된 조항 · 형벌이 아닌 항목(부가운임 등) · 조항 없는 메모는 뺀다
+    var applied = {}, reviewTags = [];
+    r.summary.forEach(function (s) { applied[s.law] = true; });
+    r.findings.forEach(function (f) {
+      if (f.status !== "review" || !f.law || applied[f.law] || L[f.law].penal === false) return;
+      if (reviewTags.indexOf(f.law) < 0) reviewTags.push(f.law);
+    });
+    var tags = (r.summary.length || reviewTags.length)
       ? '<div class="crime-tags">' + r.summary.map(function (s) {
           return '<span class="crime-tag">' + esc(s.name) + (s.count > 1 ? " <small>×" + s.count + "</small>" : "") + "</span>";
-        }).join("") + "</div>"
-      : '<p class="empty">확정 적용 죄명 없음 — 아래 검토 항목을 확인하세요.</p>';
+        }).join("") + reviewTags.map(function (law) {
+          return '<span class="crime-tag review">' + esc(L[law].name) + " <small>(검토)</small></span>";
+        }).join("") + "</div>" +
+        (r.summary.length ? "" : '<p class="empty">확정 적용 죄명 없음 — (검토) 죄명은 아래 단계별 검토와 범죄사실 초안의 유의사항을 확인하세요.</p>')
+      : '<p class="empty">적용 죄명 없음 — 아래 단계별 검토를 확인하세요.</p>';
     var conc = r.concurrence.length
       ? '<ul class="conc">' + r.concurrence.map(function (c) { return "<li>" + esc(c.text) + precButtons(c.precs) + "</li>"; }).join("") + "</ul>"
       : "";
@@ -214,7 +244,7 @@
     var isOpen = function (id, def) { return (id in open ? open[id] : def) ? " open" : ""; };
 
     out.innerHTML =
-      '<div class="summary"><h2>30초 요약 — 적용 죄명</h2>' + tags + conc + "</div>" +
+      '<div class="summary"><h2>30초 요약 — 적용 죄명 <small class="legend">(검토) = 판례 미확정 · 수사팀 판단 필요</small></h2>' + tags + conc + "</div>" +
       '<details class="block" id="detail-block"' + isOpen("detail-block", true) + '><summary>단계별 검토 (' + r.findings.length + '건)</summary><div class="body">' + detail + "</div></details>" +
       '<details class="block" id="action-block"' + isOpen("action-block", false) + '><summary>현장 조치 · 증거 확보 (' + (g.actions.length + g.evidence.length) + '건)</summary><div class="body">' + actions + "</div></details>" +
       '<details class="block" id="question-block"' + isOpen("question-block", false) + '><summary>질문 목록 (' + (g.victim.length + g.suspect.length) + '건)</summary><div class="body">' + qs + "</div></details>" +

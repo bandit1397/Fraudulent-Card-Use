@@ -102,7 +102,8 @@
     o = o || {};
     return {
       status: status, law: law, title: o.title || null, victim: o.victim || null,
-      reason: o.reason || "", precs: o.precs || [], notes: o.notes || [], stage: o.stage || null
+      reason: o.reason || "", precs: o.precs || [], notes: o.notes || [], stage: o.stage || null,
+      fact: o.fact || null // 범죄사실 문안 키를 직접 지정할 때
     };
   }
 
@@ -141,7 +142,7 @@
         out.push(F("apply", "형법347", { victim: "holder", reason: "명의자를 속여 " + obj + "를 교부받음 (사기)" }));
         break;
       case "entrusted":
-        out.push(F("review", "형법355①", { victim: "holder", title: "횡령 (카드 자체를 영득했다면)", reason: "맡아 보관하던 " + obj + "를 돌려주지 않거나 자기 것처럼 처분했다면 횡령", notes: ["반환 거부·처분 여부 확인 — 맡은 상태에서 몰래 사용만 했다면 사용 단계의 죄명 위주로 검토"] }));
+        out.push(F("review", "형법355①", { victim: "holder", fact: "형법355①:card", title: "횡령 (카드 자체를 영득했다면)", reason: "맡아 보관하던 " + obj + "를 돌려주지 않거나 자기 것처럼 처분했다면 횡령", notes: ["반환 거부·처분 여부 확인 — 맡은 상태에서 몰래 사용만 했다면 사용 단계의 죄명 위주로 검토"] }));
         break;
       case "info_illegal":
         if (m === "cardinfo") {
@@ -155,8 +156,8 @@
         out.push(F("apply", "여전70①5", { victim: "public", reason: "행사할 목적으로 위조·변조 카드 취득" }));
         break;
       case "applied":
-        out.push(F("review", "형법231", { victim: "public", title: "사문서위조·행사 (발급신청서)", reason: "타인 명의로 카드 발급신청서를 작성·제출" }));
-        out.push(F("review", "형법347", { victim: "cardco", title: "사기 (카드사 기망 — 카드 발급)", reason: "명의를 모용해 카드사를 속여 카드를 발급받음" }));
+        out.push(F("review", "형법231", { victim: "public", fact: "형법231:applied", title: "사문서위조·행사 (발급신청서)", reason: "타인 명의로 카드 발급신청서를 작성·제출" }));
+        out.push(F("review", "형법347", { victim: "cardco", fact: "형법347:applied", title: "사기 (카드사 기망 — 카드 발급)", reason: "명의를 모용해 카드사를 속여 카드를 발급받음" }));
         break;
       case "borrowed":
         out.push(F("no", null, { title: "카드 취득 — 범죄 아님", reason: "명의자의 승낙을 받아 빌린 카드 — 취득 행위 자체는 처벌 대상이 아님", notes: ["승낙 범위를 넘어 쓴 경우는 '맡아서 보관 중 · 심부름으로 받음'을 선택", "카드를 빌려준 명의자(청소년 등)는 원칙적으로 처벌 대상 아님 — 부정 사용에 적극 가담했다면 방조 검토"] }));
@@ -474,7 +475,7 @@
     var f = [];
     var item = inp.item, role = inp.role, how = inp.how;
     if (role === "broker") {
-      if (item === "credit") f.push(F("review", "여전70④3", { title: "신용카드 양도·양수 알선 — 공범(방조) 검토", reason: "여신전문금융업법에는 알선 처벌 규정이 따로 없음" }));
+      if (item === "credit") f.push(F("review", "여전70④3", { fact: "여전70④3:알선", title: "신용카드 양도·양수 알선 — 공범(방조) 검토", reason: "여신전문금융업법에는 알선 처벌 규정이 따로 없음" }));
       else f.push(F("apply", "전금49④4", { reason: "양도·대여 등을 알선·중개·광고하거나 대가를 받고 권유" }));
     } else if (item === "accountinfo") {
       f.push(F(how === "rent_crime" ? "apply" : "review", "전금49④5", { reason: "범죄에 이용할 목적 또는 범죄에 이용될 것을 알면서 계좌정보를 제공(제공받음)·보관·전달", notes: ["범죄 이용에 대한 인식(미필적 인식 포함)이 있어야 성립 — 인식 여부 확인"] }));
@@ -482,9 +483,9 @@
       if (how === "sell") {
         f.push(F("apply", "여전70④3", { reason: "신용카드를 " + (role === "give" ? "양도" : "양수") + " (제15조 위반)" }));
       } else if (how === "pledge") {
-        f.push(F("review", "여전70④3", { title: "신용카드 질권설정 — 처벌 여부 확인", reason: "제15조는 질권 설정도 금지하지만 처벌조항(제70조 제4항 제3호)은 '양도·양수'만 규정" }));
+        f.push(F("review", "여전70④3", { fact: "여전70④3:질권", title: "신용카드 질권설정 — 처벌 여부 확인", reason: "제15조는 질권 설정도 금지하지만 처벌조항(제70조 제4항 제3호)은 '양도·양수'만 규정" }));
       } else {
-        f.push(F("review", "여전70④3", { title: "신용카드 대여 — 양도 해당 여부", reason: "제15조는 양도·양수·질권만 금지 — 대여는 직접 규정 없음. 돌려받을 예정 없는 확정적 이전인지 확인", notes: ["신용카드도 전자식 카드로서 전자금융거래법상 접근매체에 해당하는지 검토 (제6조 제3항 '다른 법률에 특별한 규정이 없는 한')"] }));
+        f.push(F("review", "여전70④3", { fact: "여전70④3:대여", title: "신용카드 대여 — 양도 해당 여부", reason: "제15조는 양도·양수·질권만 금지 — 대여는 직접 규정 없음. 돌려받을 예정 없는 확정적 이전인지 확인", notes: ["신용카드도 전자식 카드로서 전자금융거래법상 접근매체에 해당하는지 검토 (제6조 제3항 '다른 법률에 특별한 규정이 없는 한')"] }));
       }
     } else {
       switch (how) {
@@ -510,7 +511,7 @@
       }
     }
     if (inp.usedForFraud) {
-      f.push(F("review", "형법347", { title: "사기방조 (또는 공범)", reason: "넘긴 통장·카드가 보이스피싱 등에 실제 쓰였고 그 가능성을 인식했다면 사기방조 검토. 직접 인출·전달에 가담했다면 전기통신금융사기(통신사기피해환급법 제15조의2) 공범 검토", notes: ["사기 공범이 아닌 명의인이 피해금을 인출하면 횡령 (2017도17494) — '잘못 들어온 돈' 메뉴 참고"], precs: ["2017도17494"] }));
+      f.push(F("review", "형법347", { fact: "형법347:사기방조", title: "사기방조 (또는 공범)", reason: "넘긴 통장·카드가 보이스피싱 등에 실제 쓰였고 그 가능성을 인식했다면 사기방조 검토. 직접 인출·전달에 가담했다면 전기통신금융사기(통신사기피해환급법 제15조의2) 공범 검토", notes: ["사기 공범이 아닌 명의인이 피해금을 인출하면 횡령 (2017도17494) — '잘못 들어온 돈' 메뉴 참고"], precs: ["2017도17494"] }));
     }
     f.forEach(function (x) { x.stage = "양도·대여"; x.penalty = x.law ? penaltyFor(x.law, inp) : ""; });
     return { findings: f, concurrence: [], summary: summarize(f) };

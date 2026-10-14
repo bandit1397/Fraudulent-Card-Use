@@ -122,3 +122,13 @@ dialog .close{float:right;border:0;background:none;color:var(--muted);font-size:
 .help-body table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
 .help-body th,.help-body td{border:1px solid var(--line);padding:6px;text-align:left;vertical-align:top}
 .help-body th{background:var(--card);color:var(--muted);font-weight:600}
+
+/* 검토 죄명 · 유의사항 */
+.crime-tag.review{border-style:dashed;border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+.crime-tag.review small{color:var(--warn)}
+.summary h2 .legend{font-weight:400;font-size:12px;color:var(--muted)}
+.caution{border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--card);border-radius:8px;padding:8px 10px;margin:6px 0 4px;font-size:13px}
+.caution.review{border-left-color:var(--warn);background:var(--warn-soft)}
+.caution b{display:block;margin-bottom:2px}
+.caution ul{margin:2px 0 0;padding-left:18px}
+.caution li{margin:2px 0}
