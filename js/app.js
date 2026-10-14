@@ -202,7 +202,63 @@
 
   var list = function (arr) { return '<ul class="list">' + arr.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>"; };
 
+  // ── 입력 단계 접기 — 제목을 누르면 펼침, 접혀 있을 때는 고른 값을 제목 아래에 표시 ──
+  function pickedText(st) {
+    var rows = st.querySelectorAll(".use-row");
+    if (rows.length) return Array.prototype.map.call(rows, function (r) {
+      return Array.prototype.map.call(r.querySelectorAll('.chip[aria-pressed="true"]'), function (b) { return b.textContent; }).join(" → ");
+    }).join(" / ");
+    var parts = [];
+    st.querySelectorAll(".chips").forEach(function (c) {
+      if (c.closest("[hidden]")) return;
+      var b = c.querySelector('.chip[aria-pressed="true"]');
+      if (b) parts.push(b.textContent);
+    });
+    var amt = st.querySelector("input.text");
+    if (amt && amt.value) parts.push(Number(amt.value.replace(/[^0-9]/g, "")).toLocaleString("ko-KR") + "원");
+    var chk = st.querySelector("input[type=checkbox]");
+    if (chk) parts.push(chk.checked ? "범죄에 실제 사용됨" : "범죄 사용 확인 안 됨");
+    return parts.join(" · ");
+  }
+  function foldSteps() {
+    document.querySelectorAll(".mode .step").forEach(function (st) {
+      var h = st.querySelector(":scope > h2");
+      if (!h) return;
+      if (!st.hasAttribute("data-fold")) {
+        st.setAttribute("data-fold", "");
+        st.classList.add("folded");
+        h.setAttribute("role", "button");
+        h.setAttribute("tabindex", "0");
+        h.setAttribute("aria-expanded", "false");
+        h.insertAdjacentHTML("beforeend", '<span class="picked"></span>');
+        var toggle = function () {
+          var f = st.classList.toggle("folded");
+          h.setAttribute("aria-expanded", String(!f));
+        };
+        h.addEventListener("click", toggle);
+        h.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+      }
+      h.querySelector(".picked").textContent = pickedText(st);
+    });
+  }
+
+  // 항목을 고르면 그 단계를 바로 접는다 — 단, 고른 항목 때문에 새 질문이 나타나면(예: 맡아 보관 → 부탁 여부) 펼친 채 둔다
+  function visibleGroups(st) {
+    return Array.prototype.filter.call(st.querySelectorAll(".chips"), function (c) { return !c.closest("[hidden]"); }).length;
+  }
+  document.addEventListener("click", function (e) {
+    var chip = e.target.closest(".mode .step .chip");
+    if (!chip) return;
+    var st = chip.closest(".step"), before = visibleGroups(st);
+    setTimeout(function () {
+      if (visibleGroups(st) > before) return;
+      st.classList.add("folded");
+      st.querySelector(":scope > h2").setAttribute("aria-expanded", "false");
+    }, 180);
+  }, true); // 캡처 단계 — 칩이 다시 그려지기 전에 어느 단계인지 기억
+
   function analyze() {
+    foldSteps();
     var out = $("result");
     $("result-divider").hidden = S.mode === "ref";
     if (S.mode === "ref") { out.innerHTML = ""; return; }
@@ -256,7 +312,7 @@
 
     out.innerHTML =
       '<div class="summary"><h2>30초 요약 — 적용 죄명 <small class="legend">(검토) = 대법원 판례가 없거나, 사실관계에 따라 결론이 달라지는 죄명</small></h2>' + tags + conc + "</div>" +
-      '<details class="block" id="detail-block"' + isOpen("detail-block", true) + '><summary>단계별 검토 (' + r.findings.length + '건)</summary><div class="body">' + detail + "</div></details>" +
+      '<details class="block" id="detail-block"' + isOpen("detail-block", false) + '><summary>단계별 검토 (' + r.findings.length + '건)</summary><div class="body">' + detail + "</div></details>" +
       '<details class="block" id="action-block"' + isOpen("action-block", false) + '><summary>현장 조치 · 증거 확보 (' + (g.actions.length + g.evidence.length) + '건)</summary><div class="body">' + actions + "</div></details>" +
       '<details class="block" id="question-block"' + isOpen("question-block", false) + '><summary>질문 목록 (' + (g.victim.length + g.suspect.length) + '건)</summary><div class="body">' + qs + "</div></details>" +
       '<details class="block" id="facts-block"' + isOpen("facts-block", false) + '><summary>범죄사실 초안 (' + keys.length + '건)</summary><div class="body">' + factsHtml(keys, defaults) + "</div></details>";

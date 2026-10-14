@@ -259,3 +259,18 @@ dialog{max-height:85vh;overflow-y:auto}
 .law-art-head a{font-size:12px;white-space:nowrap}
 .law-text{margin:0;padding:10px;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;font-family:inherit;font-size:13.5px;line-height:1.7;background:var(--card);color:var(--ink)}
 .law-text mark{background:var(--warn-soft);color:var(--ink);border-left:3px solid var(--warn);padding:1px 2px;display:inline-block;width:100%}
+
+/* 입력 단계 접기 */
+.step > h2[role=button]{cursor:pointer;flex-wrap:wrap;user-select:none}
+.step > h2[role=button]::after{content:"▴";color:var(--c,var(--muted));font-size:14px;margin-left:6px}
+.step.folded > h2[role=button]::after{content:"▾"}
+.step.folded > :not(h2){display:none!important}
+.step.folded > h2{border-bottom-color:transparent}
+.step > h2 .picked{order:3;flex-basis:100%;font-size:13px;font-weight:600;color:var(--c,var(--accent));margin:2px 0 0 34px;line-height:1.4}
+.step:not(.folded) > h2 .picked{display:none}
+.step.folded{margin-bottom:8px}
+/* 사용방법 */
+.howto{margin:4px 0 12px}
+.howto ol{margin:0;padding-left:20px}
+.howto li{margin:0 0 6px;font-size:14px;line-height:1.5}
+.howto .note{font-size:13px;color:var(--muted);margin:8px 0 0}
