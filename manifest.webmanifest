@@ -1,0 +1,16 @@
+{
+  "name": "카드 부정사용 현장 판단",
+  "short_name": "카드부정사용",
+  "description": "타인 카드·계좌·간편결제 부정사용 112 현장 법률 판단 참고 도구",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f9",
+  "theme_color": "#1f4fd1",
+  "lang": "ko",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
