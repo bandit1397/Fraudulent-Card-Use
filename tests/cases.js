@@ -152,6 +152,26 @@ var CASES = [
     input: { mode: "use", date: "after20251223", medium: "check", acq: "borrowed", relation: "none", uses: [{ type: "store", result: "ok" }] },
     expect: { notApply: ["여전70①3", "여전70①4", "형법347"] } },
 
+  { name: "제70조 제6항 위조카드로 무인 단말기 결제 실패 → 위조카드 사용 미수 처벌",
+    input: { mode: "use", date: "after20251223", medium: "forged", acq: "obtained", relation: "none", uses: [{ type: "kiosk", result: "denied" }] },
+    expect: { apply: ["여전70①2"] } },
+
+  { name: "제70조 제6항 위조카드로 현금서비스 실패 → 위조카드 사용 미수 처벌",
+    input: { mode: "use", date: "after20251223", medium: "forged", acq: "obtained", relation: "none", uses: [{ type: "cash_service", result: "denied" }] },
+    expect: { apply: ["여전70①2"] } },
+
+  { name: "평소 알던 카드번호로 온라인 결제 → 분실·도난 카드 사용(제3호) 검토 대상 아님",
+    input: { mode: "use", date: "after20251223", medium: "cardinfo", acq: "info_known", relation: "none", uses: [{ type: "online", result: "ok" }] },
+    expect: { apply: ["형법347의2"], notApply: ["여전70①3"], status: {} , noStatus: ["여전70①3"] } },
+
+  { name: "강취한 신용카드 번호로 온라인 결제 → 제4호 검토 (제3호 아님)",
+    input: { mode: "use", date: "after20251223", medium: "credit", acq: "robbed", relation: "none", uses: [{ type: "online", result: "ok" }] },
+    expect: { status: { "여전70①4": "review" }, noStatus: ["여전70①3"] } },
+
+  { name: "신용카드 질권(담보) → 처벌 규정 없음",
+    input: { mode: "mule", item: "credit", role: "give", how: "pledge", date: "after20251223" },
+    expect: { status: { "여전70④3": "no" } } },
+
   { name: "신용카드 양도 → 여신전문금융업법 제70조 제4항 제3호",
     input: { mode: "mule", item: "credit", role: "give", how: "sell", date: "after20251223" },
     expect: { apply: ["여전70④3"] } }

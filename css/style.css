@@ -139,3 +139,95 @@ button.crime-tag{font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .fact-sub{display:block;font-weight:400;font-size:12px;color:var(--muted)}
 .fact-head.flash{animation:flash 1.6s ease-out}
 @keyframes flash{0%{background:var(--warn-soft)}100%{background:transparent}}
+
+/* ═══ 시인성 개선: 단계별 색상 · 구분 ═══════════════════ */
+:root{
+  --c1:#1f4fd1; --c1s:#eaf0fd;  /* 1단계 파랑 */
+  --c2:#0b7a86; --c2s:#e3f5f6;  /* 2단계 청록 */
+  --c3:#c2410c; --c3s:#fdeee6;  /* 3단계 주황 */
+  --c4:#6d28d9; --c4s:#f1eafd;  /* 4단계 보라 */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --c1:#7fa4ff; --c1s:#1b2640; --c2:#4fd1db; --c2s:#123236;
+    --c3:#ff9a66; --c3s:#3a2215; --c4:#b79bff; --c4s:#2a2042;
+  }
+}
+:root[data-theme="dark"]{
+  --c1:#7fa4ff; --c1s:#1b2640; --c2:#4fd1db; --c2s:#123236;
+  --c3:#ff9a66; --c3s:#3a2215; --c4:#b79bff; --c4s:#2a2042;
+}
+
+/* 단계 순서대로 색 지정 */
+.mode > .step:nth-of-type(1){--c:var(--c1);--cs:var(--c1s)}
+.mode > .step:nth-of-type(2){--c:var(--c2);--cs:var(--c2s)}
+.mode > .step:nth-of-type(3){--c:var(--c3);--cs:var(--c3s)}
+.mode > .step:nth-of-type(4){--c:var(--c4);--cs:var(--c4s)}
+
+/* 단계 카드: 색 테두리 + 색 띠 머리글 */
+.step{border:2px solid var(--c,var(--line));border-radius:14px;padding:0;overflow:hidden;margin:0 0 14px;background:var(--card)}
+.step > h2{margin:0;padding:10px 14px;background:var(--cs,var(--bg));border-bottom:2px solid var(--c,var(--line));font-size:17px;color:var(--ink)}
+.step > h2 small{margin-left:auto;font-size:12px;font-weight:600;color:var(--c,var(--muted));background:var(--card);border:1px solid var(--c,var(--line));border-radius:999px;padding:1px 8px}
+.step .n{width:26px;height:26px;font-size:14px;background:var(--c,var(--accent));color:#fff}
+.step > .chips,.step > #uses,.step > .add,.step > .sub,.step > .text,.step > .check,.step > .basis,.step > .date-help-slot{margin-left:14px;margin-right:14px}
+.step > .chips:first-of-type,.step > #uses{margin-top:12px}
+.step > .chips:last-child,.step > .add,.step > .text:last-child,.step > .check:last-child,.step > .basis:last-child{margin-bottom:14px}
+.step > .check{margin-top:12px}
+.step > .basis{display:block}
+
+/* 세부 질문 소제목: 왼쪽 색 막대 */
+.sub-q{margin:16px 14px 8px;padding:2px 0 2px 10px;border-left:4px solid var(--c,var(--accent));font-size:14px;font-weight:700;color:var(--ink)}
+.step > .sub-q:first-of-type{margin-top:12px}
+.sub .sub-q{margin-left:0;margin-right:0}
+.sub{margin-bottom:14px}
+.step > .text{width:calc(100% - 28px)}
+.step > .text:last-child{margin-bottom:14px}
+
+/* 선택 칩: 선택하면 단계 색으로 채우고 ✓ */
+.chip{border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;transition:border-color .15s}
+.chip:hover{border-color:var(--c,var(--accent))}
+.chip[aria-pressed="true"]{background:var(--c,var(--accent));border-color:var(--c,var(--accent));color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.chip[aria-pressed="true"]::before{content:"✓ ";font-weight:800}
+:root[data-theme="dark"] .chip[aria-pressed="true"]{color:#0f1216}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#0f1216}}
+
+/* 3단계 사용 행위 묶음 */
+.use-row{border:1.5px solid var(--c,var(--line));border-radius:12px;padding:0;margin-bottom:10px;overflow:hidden;background:var(--card)}
+.use-row-head{margin:0;padding:6px 12px;background:var(--cs,var(--bg));color:var(--c,var(--ink));font-size:14px}
+.use-row .del{color:var(--no);font-weight:600}
+.use-row .chips{padding:0 12px}
+.use-row .chips.r{padding-bottom:12px}
+.use-row .chips + .chips{margin-top:0}
+.mini-label{margin:10px 12px 6px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.add{border:1.5px dashed var(--c,var(--accent));background:var(--cs,var(--accent-soft));color:var(--c,var(--accent));width:calc(100% - 28px)}
+
+/* 판단 결과 구분선 */
+.result-divider{display:flex;align-items:center;gap:10px;margin:22px 0 12px;color:var(--ink);font-weight:800;font-size:16px}
+.result-divider::before,.result-divider::after{content:"";flex:1;height:2px;background:var(--line)}
+.result-divider span{padding:4px 14px;border:2px solid var(--ink);border-radius:999px}
+
+/* 결과 칸별 색: 요약 · 검토 · 조치 · 질문 · 초안 */
+.summary{border:2px solid var(--accent);border-radius:14px;padding:0;overflow:hidden;background:var(--card)}
+.summary > h2{margin:0;padding:10px 14px;background:var(--accent);color:#fff;font-size:16px}
+.summary > h2 .legend{color:rgba(255,255,255,.85)}
+:root[data-theme="dark"] .summary > h2{color:#0f1216}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .summary > h2{color:#0f1216}}
+.summary > .crime-tags,.summary > .tag-hint,.summary > .empty,.summary > .conc{margin-left:14px;margin-right:14px}
+.summary > .crime-tags{margin-top:12px}
+.summary > :last-child{margin-bottom:12px}
+.crime-tag{padding:6px 12px;font-size:15px;border-width:2px;border-radius:10px}
+.block{border:2px solid var(--b,var(--line));border-radius:14px;overflow:hidden}
+.block > summary{background:var(--bs,var(--card));border-bottom:2px solid transparent;font-size:16px;padding:12px 14px}
+.block[open] > summary{border-bottom-color:var(--b,var(--line))}
+.block .body{padding-top:6px}
+#detail-block{--b:var(--c1);--bs:var(--c1s)}
+#action-block{--b:#11703d;--bs:var(--ok-soft)}
+#question-block{--b:var(--c4);--bs:var(--c4s)}
+#facts-block{--b:var(--c3);--bs:var(--c3s)}
+.stage-title{font-size:14px;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:4px;margin-top:16px}
+.fact-head{padding:6px 8px;border-radius:8px;background:var(--bg);margin-top:14px}
+
+/* 머리글 제목 가운데 정렬 (테마 버튼은 오른쪽 고정) */
+.top-inner{position:relative;justify-content:center}
+.top-inner h1{text-align:center;padding:0 44px}
+.top-inner #theme{position:absolute;right:16px;top:50%;transform:translateY(-50%)}

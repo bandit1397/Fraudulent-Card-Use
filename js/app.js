@@ -61,7 +61,8 @@
     u.uses.forEach(function (row, i) {
       var div = document.createElement("div");
       div.className = "use-row";
-      div.innerHTML = '<div class="use-row-head"><span>사용 ' + (i + 1) + "</span>" + (u.uses.length > 1 ? '<button class="del" type="button">삭제</button>' : "") + '</div><div class="chips t"></div><div class="chips r"></div>';
+      div.innerHTML = '<div class="use-row-head"><span>사용 행위 ' + (i + 1) + "</span>" + (u.uses.length > 1 ? '<button class="del" type="button">삭제</button>' : "") + '</div>' +
+        '<div class="mini-label">무엇을 했나</div><div class="chips t"></div><div class="mini-label">결과</div><div class="chips r"></div>';
       box.appendChild(div);
       chips(div.querySelector(".t"), E.USES, row.type, function (k) { row.type = k; renderUse(); }, useKeys);
       chips(div.querySelector(".r"), RESULT, row.result, function (k) { row.result = k; renderUse(); });
@@ -198,6 +199,7 @@
 
   function analyze() {
     var out = $("result");
+    $("result-divider").hidden = S.mode === "ref";
     if (S.mode === "ref") { out.innerHTML = ""; return; }
     var inp = currentInput();
     var r = E.analyze(inp);

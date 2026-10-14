@@ -34,6 +34,9 @@ CASES.forEach(function (c) {
     var f = r.findings.filter(function (f) { return f.law === law; })[0];
     if (!f || f.status !== e.status[law]) errs.push(law + " 상태 기대 " + e.status[law] + ", 실제 " + (f ? f.status : "없음"));
   });
+  (e.noStatus || []).forEach(function (law) {
+    if (r.findings.some(function (f) { return f.law === law; })) errs.push("나오면 안 되는 조항: " + law);
+  });
   (e.conc || []).forEach(function (p) {
     if (!r.concurrence.some(function (c) { return c.precs.indexOf(p) >= 0; })) errs.push("경합 설명에 판례 없음: " + p);
   });

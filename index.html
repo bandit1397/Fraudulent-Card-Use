@@ -31,18 +31,18 @@
 
   <!-- 카드·계좌 무단사용 -->
   <section id="mode-use" class="mode">
-    <div class="step"><h2><span class="n">1</span>무엇을 썼나</h2><div class="chips" id="medium"></div></div>
-    <div class="step"><h2><span class="n">2</span>어떻게 손에 넣었나</h2><div class="chips" id="acq"></div>
+    <div class="step"><h2><span class="n">1</span>무엇을 사용했나 <small>하나 선택</small></h2><div class="chips" id="medium"></div></div>
+    <div class="step"><h2><span class="n">2</span>어떻게 손에 넣었나 <small>하나 선택</small></h2><div class="chips" id="acq"></div>
       <div id="entrust-box" class="sub" hidden>
         <div class="sub-q">인출 · 결제를 부탁받았나요?</div>
         <div class="chips" id="entrust"></div>
       </div>
     </div>
-    <div class="step"><h2><span class="n">3</span>어떻게 썼나 <small>여러 개 추가 가능</small></h2>
+    <div class="step"><h2><span class="n">3</span>어떻게 사용했나 <small>행위마다 추가</small></h2>
       <div id="uses"></div>
       <button class="add" id="add-use">+ 사용 행위 추가</button>
     </div>
-    <div class="step"><h2><span class="n">4</span>결과를 바꾸는 사실</h2>
+    <div class="step"><h2><span class="n">4</span>결과를 바꾸는 사실 <small>해당 시 변경</small></h2>
       <div class="sub-q">명의자(피해자)와 피의자의 관계</div><div class="chips" id="relation"></div>
       <div class="sub-q">범행 시기</div><div class="chips" id="date"></div>
       <div class="date-help-slot"></div>
@@ -76,12 +76,13 @@
   <!-- 편의시설 부정이용 · 무임승차 -->
   <section id="mode-facility" class="mode" hidden>
     <div class="step"><h2><span class="n">1</span>어떤 상황인가</h2><div class="chips" id="facilityCase"></div>
-      <p class="basis" style="margin:8px 0 0">성인이 청소년 · 어린이 · 경로 교통카드를 쓴 경우는 '카드·계좌 무단사용' 메뉴의 '1. 무엇을 썼나'에서 해당 교통카드를 선택하세요.</p>
+      <p class="basis" style="margin:8px 0 0">성인이 청소년 · 어린이 · 경로 교통카드를 쓴 경우는 '카드·계좌 무단사용' 메뉴의 '1. 무엇을 사용했나'에서 해당 교통카드를 선택하세요.</p>
     </div>
     <div class="step"><h2><span class="n">2</span>결과</h2><div class="chips" id="facilityResult"></div></div>
   </section>
 
   <!-- 결과 -->
+  <div class="result-divider" id="result-divider"><span>판단 결과</span></div>
   <section id="result" aria-live="polite"></section>
 
   <!-- 법령·판례 -->
