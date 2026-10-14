@@ -121,34 +121,44 @@
       precButtons(f.precs) + "</div>";
   }
 
-  function factText(tpl) {
-    return tpl.replace(/\{([^}]+)\}/g, function (_, k) { return (S.fields[k] || "").trim() || "○○"; });
-  }
-
-  function factsHtml(r, inp) {
-    var keys = [], seen = {};
+  function factKeys(r, ctx) {
+    var keys = [];
     r.findings.forEach(function (f) {
       if (f.status !== "apply" || !f.law) return;
-      var k = f.useType && G.facts[f.law + ":" + f.useType] ? f.law + ":" + f.useType : (G.facts[f.law] ? f.law : null);
-      if (k && !seen[k]) { seen[k] = 1; keys.push(k); }
+      var k = G.factKey(f, ctx);
+      if (k && keys.indexOf(k) < 0) keys.push(k);
     });
-    if (!keys.length) return '<p class="basis">적용 죄명이 확정되면 문안 템플릿이 표시됩니다.</p>';
-    var F = [["일시", "예: 2026. 10. 14. 14:30"], ["장소", "예: 서울 ○○구 ○○로 12"], ["상호", "가맹점 · 은행명"], ["명의자", "카드 · 계좌 명의자"], ["카드", "예: ○○카드 신용카드"], ["금액", "예: 35,000"], ["횟수", "예: 5"], ["물품", "예: 담배 등"]];
+    return keys;
+  }
+
+  function factText(tpl, defaults) {
+    return tpl.replace(/\{([^}]+)\}/g, function (_, k) { return (S.fields[k] || "").trim() || defaults[k] || "○○"; });
+  }
+
+  function factsHtml(keys, defaults) {
+    if (!keys.length) return '<p class="basis">적용 죄명이 확정되면 문안 템플릿이 표시됩니다. (‘검토’ 항목은 수사팀 판단 후 작성)</p>';
+    var F = [["일시", "예: 2026. 10. 14. 14:30"], ["장소", "예: 서울 ○○구 ○○로 12"], ["상호", "가맹점 · 은행명"], ["명의자", "명의자 · 피해자"], ["카드", defaults["카드"] || "예: ○○카드 신용카드"], ["금액", "예: 35,000"], ["횟수", "예: 5"], ["물품", "예: 담배 등"]];
     var fields = '<div class="fields">' + F.map(function (x) {
       return '<div><label for="f-' + x[0] + '">' + x[0] + '</label><input id="f-' + x[0] + '" data-f="' + x[0] + '" placeholder="' + esc(x[1]) + '" value="' + esc(S.fields[x[0]] || "") + '"></div>';
     }).join("") + "</div>";
     var body = keys.map(function (k, i) {
       var law = k.split(":")[0];
-      return '<div class="fact-head"><span>' + (i + 1) + ". " + esc(L[law].name) + '</span><button type="button" class="copy" data-i="' + i + '">복사</button></div><div class="fact" id="fact-' + i + '">' + esc(factText(G.facts[k])) + "</div>";
+      return '<div class="fact-head"><span>' + (i + 1) + ". " + esc(L[law].name) + '</span><button type="button" class="copy" data-i="' + i + '">복사</button></div><div class="fact" id="fact-' + i + '">' + esc(factText(G.facts[k], defaults)) + "</div>";
     }).join("");
     return fields + body + '<p class="basis">' + esc(G.factsBasis) + "</p>";
   }
+
+  var list = function (arr) { return '<ul class="list">' + arr.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>"; };
 
   function analyze() {
     var out = $("result");
     if (S.mode === "ref") { out.innerHTML = ""; return; }
     var inp = currentInput();
     var r = E.analyze(inp);
+    var ctx = G.ctx(inp, r);
+    var g = G.build(ctx);
+    var keys = factKeys(r, ctx);
+    var defaults = G.defaults(ctx);
 
     var tags = r.summary.length
       ? '<div class="crime-tags">' + r.summary.map(function (s) {
@@ -169,20 +179,23 @@
       return '<div class="stage-title">' + esc(s) + "</div>" + byStage[s].map(findingHtml).join("");
     }).join("");
 
-    // 현장 조치 · 증거
-    var ev = [];
-    if (inp.mode === "use") inp.uses.forEach(function (u) { (G.evidenceByUse[u.type] || []).forEach(function (x) { if (ev.indexOf(x) < 0) ev.push(x); }); });
-    var actions = '<ul class="list">' + G.actions.map(function (a) { return "<li><b>" + esc(a.t) + "</b>" + esc(a.d) + "</li>"; }).join("") + "</ul>" +
-      (ev.length ? '<div class="stage-title">확보할 증거</div><ul class="list">' + ev.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "");
-    var qs = '<div class="stage-title">피해자 · 명의자</div><ul class="list">' + G.questions.victim.map(function (q) { return "<li>" + esc(q) + "</li>"; }).join("") +
-      '</ul><div class="stage-title">피의자</div><ul class="list">' + G.questions.suspect.map(function (q) { return "<li>" + esc(q) + "</li>"; }).join("") + "</ul>";
+    // 현장 조치 · 증거 · 질문 — 사건 조건에 맞춘 항목
+    var actions = '<ul class="list">' + g.actions.map(function (a) { return "<li><b>" + esc(a.t) + "</b>" + esc(a.d) + "</li>"; }).join("") + "</ul>" +
+      (g.evidence.length ? '<div class="stage-title">확보할 증거</div>' + list(g.evidence) : "");
+    var qs = '<div class="stage-title">' + (inp.mode === "money" ? "송금인 · 피해자" : "피해자 · 명의자") + "</div>" + list(g.victim) +
+      '<div class="stage-title">피의자</div>' + list(g.suspect);
+
+    // 다시 그려도 사용자가 펼친 칸은 그대로 유지
+    var open = {};
+    out.querySelectorAll("details[id]").forEach(function (d) { open[d.id] = d.open; });
+    var isOpen = function (id, def) { return (id in open ? open[id] : def) ? " open" : ""; };
 
     out.innerHTML =
       '<div class="summary"><h2>30초 요약 — 적용 죄명</h2>' + tags + conc + "</div>" +
-      '<details class="block" open><summary>단계별 검토 (' + r.findings.length + "건)</summary><div class=\"body\">" + detail + "</div></details>" +
-      '<details class="block"><summary>현장 조치 · 증거 확보</summary><div class="body">' + actions + "</div></details>" +
-      '<details class="block"><summary>질문 목록</summary><div class="body">' + qs + "</div></details>" +
-      '<details class="block" id="facts-block"><summary>범죄사실 초안</summary><div class="body">' + factsHtml(r, inp) + "</div></details>";
+      '<details class="block" id="detail-block"' + isOpen("detail-block", true) + '><summary>단계별 검토 (' + r.findings.length + '건)</summary><div class="body">' + detail + "</div></details>" +
+      '<details class="block" id="action-block"' + isOpen("action-block", false) + '><summary>현장 조치 · 증거 확보 (' + (g.actions.length + g.evidence.length) + '건)</summary><div class="body">' + actions + "</div></details>" +
+      '<details class="block" id="question-block"' + isOpen("question-block", false) + '><summary>질문 목록 (' + (g.victim.length + g.suspect.length) + '건)</summary><div class="body">' + qs + "</div></details>" +
+      '<details class="block" id="facts-block"' + isOpen("facts-block", false) + '><summary>범죄사실 초안 (' + keys.length + '건)</summary><div class="body">' + factsHtml(keys, defaults) + "</div></details>";
 
     // 범죄사실 입력칸 · 복사
     var fb = $("facts-block");
@@ -190,13 +203,7 @@
       var k = e.target.getAttribute("data-f");
       if (!k) return;
       S.fields[k] = e.target.value;
-      var keys = [];
-      r.findings.forEach(function (f) {
-        if (f.status !== "apply" || !f.law) return;
-        var key = f.useType && G.facts[f.law + ":" + f.useType] ? f.law + ":" + f.useType : (G.facts[f.law] ? f.law : null);
-        if (key && keys.indexOf(key) < 0) keys.push(key);
-      });
-      keys.forEach(function (key, i) { var el = $("fact-" + i); if (el) el.textContent = factText(G.facts[key]); });
+      keys.forEach(function (key, i) { var el = $("fact-" + i); if (el) el.textContent = factText(G.facts[key], defaults); });
     });
     fb.addEventListener("click", function (e) {
       var b = e.target.closest(".copy");

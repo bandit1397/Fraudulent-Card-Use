@@ -67,5 +67,66 @@ Object.keys(Engine.ACQ_BY_MEDIUM).forEach(function (m) {
     });
   });
 });
-console.log("\n조합 검사 " + combos + "건, 판례 테스트 " + CASES.length + "건, 실패 " + fail + "건");
+// ── 현장 조치 · 질문 · 범죄사실이 사건 조건에 맞게 나오는지 ─────────
+var G = require("../data/guides.js");
+var guideFail = 0;
+function guideCheck(label, inp) {
+  var r = Engine.analyze(JSON.parse(JSON.stringify(inp)));
+  var ctx = G.ctx(inp, r), g = G.build(ctx), errs = [];
+  r.findings.forEach(function (f) {
+    if (f.status === "apply" && f.law && !G.factKey(f, ctx)) errs.push("범죄사실 문안 없음: " + f.law + (f.useType ? ":" + f.useType : ""));
+  });
+  if (!g.actions.length) errs.push("현장 조치 없음");
+  if (!g.victim.length || !g.suspect.length) errs.push("질문 목록 없음");
+  if (inp.mode === "use" && !g.evidence.length) errs.push("증거 목록 없음");
+  if (errs.length) { guideFail++; fail++; console.log("✗ 안내 " + label + ": " + errs.join(", ")); }
+  return g;
+}
+var guideCombos = 0;
+Object.keys(Engine.ACQ_BY_MEDIUM).forEach(function (m) {
+  Engine.ACQ_BY_MEDIUM[m].forEach(function (a) {
+    Engine.USES_BY_MEDIUM[m].forEach(function (u) {
+      ["ok", "denied"].forEach(function (res) {
+        guideCheck([m, a, u, res].join("/"), { mode: "use", date: "after20251223", medium: m, acq: a, entrust: "asked", relation: "none", uses: [{ type: u, result: res }] });
+        guideCombos++;
+      });
+    });
+  });
+});
+Object.keys(Engine.MULE_ITEM).forEach(function (i) {
+  Object.keys(Engine.MULE_ROLE).forEach(function (ro) {
+    Object.keys(Engine.MULE_HOW).forEach(function (h) {
+      guideCheck([i, ro, h].join("/"), { mode: "mule", item: i, role: ro, how: h, date: "after20251223", usedForFraud: true });
+      guideCombos++;
+    });
+  });
+});
+Object.keys(Engine.MONEY_CASE).forEach(function (c) {
+  guideCheck(c, { mode: "money", moneyCase: c, relation: "none", date: "after20251223" });
+  guideCombos++;
+});
+
+// 조건이 바뀌면 안내도 바뀌어야 한다
+function texts(g) { return JSON.stringify(g); }
+var base = { mode: "use", date: "after20251223", medium: "credit", acq: "found", relation: "none", uses: [{ type: "store", result: "ok" }] };
+function variant(o) { var x = JSON.parse(JSON.stringify(base)); Object.keys(o).forEach(function (k) { x[k] = o[k]; }); return guideCheck("variant", x); }
+var gBase = variant({});
+[
+  ["강취", { acq: "robbed" }, "부상"],
+  ["친족", { relation: "close" }, "고소"],
+  ["ATM 인출", { medium: "check", uses: [{ type: "atm_cash", result: "ok" }] }, "ATM"],
+  ["온라인", { medium: "cardinfo", acq: "info_illegal", uses: [{ type: "online", result: "ok" }] }, "배송"],
+  ["승인 거절", { uses: [{ type: "store", result: "denied" }] }, "거절"],
+  ["휴대전화", { medium: "phone", acq: "stolen", uses: [{ type: "bank_transfer", result: "ok" }] }, "뱅킹앱"]
+].forEach(function (t) {
+  var g = variant(t[1]);
+  if (texts(g) === texts(gBase) || texts(g).indexOf(t[2]) < 0) { fail++; guideFail++; console.log("✗ 조건 '" + t[0] + "'인데 안내가 바뀌지 않음 ('" + t[2] + "' 없음)"); }
+});
+var gMule = guideCheck("mule", { mode: "mule", item: "access", role: "give", how: "sell", date: "after20251223" });
+if (texts(gMule).indexOf("카드 실물") >= 0) { fail++; guideFail++; console.log("✗ 대포통장 메뉴에 카드 사건 조치가 섞임"); }
+var gMoney = guideCheck("money", { mode: "money", moneyCase: "refuse", relation: "none", date: "after20251223" });
+var rRefuse = Engine.analyze({ mode: "money", moneyCase: "refuse", relation: "none", date: "after20251223" });
+if (G.factKey(rRefuse.findings[0], G.ctx({ mode: "money", moneyCase: "refuse" }, rRefuse)) !== "형법355①:refuse") { fail++; guideFail++; console.log("✗ 반환 거부 사건에 착오송금 인출 문안이 나옴"); }
+
+console.log("\n조합 검사 " + combos + "건, 판례 테스트 " + CASES.length + "건, 안내·문안 검사 " + guideCombos + "건(실패 " + guideFail + "), 전체 실패 " + fail + "건");
 process.exit(fail ? 1 : 0);
