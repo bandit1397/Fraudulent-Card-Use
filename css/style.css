@@ -236,3 +236,15 @@ button.crime-tag{font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .why{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin:0 4px;vertical-align:1px;border:1px solid}
 .why-noprec{color:var(--no);border-color:var(--no);background:var(--no-soft)}
 .why-fact{color:var(--c4);border-color:var(--c4);background:var(--c4s)}
+
+/* 의견 제출 */
+.feedback{max-width:760px;margin:8px auto 0;padding:0 16px}
+.feedback{text-align:center}
+.feedback h2{font-size:17px;margin:24px 0 6px}
+.feedback p{font-size:14px;margin:4px 0;color:var(--ink)}
+.feedback .feedback-note{font-size:13px;color:var(--muted)}
+.feedback-btn{display:inline-block;margin:12px 0 4px;padding:12px 24px;font-size:16px;font-weight:700;color:#fff;background:var(--accent);border-radius:10px;text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.feedback-btn:hover{filter:brightness(1.08)}
+:root[data-theme="dark"] .feedback-btn{color:#0f1216}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .feedback-btn{color:#0f1216}}
+@media print{.feedback{display:none}}

@@ -1,5 +1,5 @@
 // 오프라인 캐시 — 파일을 고치면 VERSION 을 올린다.
-var VERSION = "v12-2026-10-14";
+var VERSION = "v13-2026-10-14";
 var FILES = [
   "./", "index.html", "css/style.css", "js/engine.js", "js/app.js",
   "data/laws.js", "data/precedents.js", "data/guides.js",
