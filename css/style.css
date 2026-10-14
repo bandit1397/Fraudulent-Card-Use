@@ -132,3 +132,10 @@ dialog .close{float:right;border:0;background:none;color:var(--muted);font-size:
 .caution b{display:block;margin-bottom:2px}
 .caution ul{margin:2px 0 0;padding-left:18px}
 .caution li{margin:2px 0}
+
+/* 요약 죄명 → 초안 이동 */
+button.crime-tag{font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.tag-hint{font-size:12px;color:var(--muted);margin:6px 0 0}
+.fact-sub{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.fact-head.flash{animation:flash 1.6s ease-out}
+@keyframes flash{0%{background:var(--warn-soft)}100%{background:transparent}}

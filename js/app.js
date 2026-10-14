@@ -182,10 +182,13 @@
     }).join("") + "</div>";
     var body = keys.map(function (k, i) {
       var f0 = keys.findings[k][0];
-      var name = keys.review[k] ? (f0.title || L[f0.law].name) : L[f0.law].name;
-      // 같은 죄명이 여러 사용 행위에 나올 때 구분되도록 행위 이름을 붙인다
-      if (f0.useType && E.USES[f0.useType]) name += " — " + E.USES[f0.useType].split(" (")[0];
-      return '<div class="fact-head"><span>' + (i + 1) + ". " + esc(name) + (keys.review[k] ? ' <span class="badge b-review">검토</span>' : ' <span class="badge b-apply">적용</span>') + '</span><button type="button" class="copy" data-i="' + i + '">복사</button></div>' +
+      // 제목은 30초 요약과 같은 죄명 이름, 아래 줄에 세부 상황(검토 사유 제목 · 사용 행위)
+      var name = L[f0.law].name + (keys.review[k] ? " (검토)" : "");
+      var sub = [];
+      if (keys.review[k] && f0.title && f0.title !== L[f0.law].name) sub.push(f0.title);
+      if (f0.useType && E.USES[f0.useType]) sub.push(E.USES[f0.useType].split(" (")[0]);
+      return '<div class="fact-head" id="draft-' + i + '" data-law="' + esc(f0.law) + '"><span>' + (i + 1) + ". " + esc(name) + (keys.review[k] ? ' <span class="badge b-review">검토</span>' : ' <span class="badge b-apply">적용</span>') +
+        (sub.length ? '<small class="fact-sub">' + esc(sub.join(" · ")) + "</small>" : "") + '</span><button type="button" class="copy" data-i="' + i + '">복사</button></div>' +
         '<div class="fact" id="fact-' + i + '">' + esc(factText(G.facts[k], defaults)) + "</div>" + cautionHtml(k, keys);
     }).join("");
     return fields + body + '<p class="basis">' + esc(G.factsBasis) + "</p>";
@@ -212,11 +215,12 @@
     });
     var tags = (r.summary.length || reviewTags.length)
       ? '<div class="crime-tags">' + r.summary.map(function (s) {
-          return '<span class="crime-tag">' + esc(s.name) + (s.count > 1 ? " <small>×" + s.count + "</small>" : "") + "</span>";
+          return '<button type="button" class="crime-tag" data-law="' + esc(s.law) + '">' + esc(s.name) + (s.count > 1 ? " <small>×" + s.count + "</small>" : "") + "</button>";
         }).join("") + reviewTags.map(function (law) {
-          return '<span class="crime-tag review">' + esc(L[law].name) + " <small>(검토)</small></span>";
+          return '<button type="button" class="crime-tag review" data-law="' + esc(law) + '">' + esc(L[law].name) + " <small>(검토)</small></button>";
         }).join("") + "</div>" +
-        (r.summary.length ? "" : '<p class="empty">확정 적용 죄명 없음 — (검토) 죄명은 아래 단계별 검토와 범죄사실 초안의 유의사항을 확인하세요.</p>')
+        '<p class="tag-hint">죄명을 누르면 범죄사실 초안으로 이동합니다 — 초안 ' + keys.length + '건 (적용 ' + keys.filter(function (k) { return !keys.review[k]; }).length + " · 검토 " + keys.filter(function (k) { return keys.review[k]; }).length + "건)</p>" +
+        (r.summary.length ? "" : '<p class="empty">확정 적용 죄명 없음 — (검토) 죄명은 범죄사실 초안 아래 유의사항을 확인하세요.</p>')
       : '<p class="empty">적용 죄명 없음 — 아래 단계별 검토를 확인하세요.</p>';
     var conc = r.concurrence.length
       ? '<ul class="conc">' + r.concurrence.map(function (c) { return "<li>" + esc(c.text) + precButtons(c.precs) + "</li>"; }).join("") + "</ul>"
@@ -249,6 +253,19 @@
       '<details class="block" id="action-block"' + isOpen("action-block", false) + '><summary>현장 조치 · 증거 확보 (' + (g.actions.length + g.evidence.length) + '건)</summary><div class="body">' + actions + "</div></details>" +
       '<details class="block" id="question-block"' + isOpen("question-block", false) + '><summary>질문 목록 (' + (g.victim.length + g.suspect.length) + '건)</summary><div class="body">' + qs + "</div></details>" +
       '<details class="block" id="facts-block"' + isOpen("facts-block", false) + '><summary>범죄사실 초안 (' + keys.length + '건)</summary><div class="body">' + factsHtml(keys, defaults) + "</div></details>";
+
+    // 요약 죄명 → 해당 범죄사실 초안으로 이동
+    out.querySelector(".summary").addEventListener("click", function (e) {
+      var t = e.target.closest(".crime-tag[data-law]");
+      if (!t) return;
+      var law = t.getAttribute("data-law");
+      var head = out.querySelector('.fact-head[data-law="' + law + '"]');
+      $("facts-block").open = true;
+      if (!head) return;
+      // 펼친 직후 위치가 정해지도록 다음 프레임에 이동 (부드러운 스크롤은 기기에 따라 멈추는 경우가 있어 즉시 이동)
+      requestAnimationFrame(function () { head.scrollIntoView({ block: "center" }); });
+      head.classList.remove("flash"); void head.offsetWidth; head.classList.add("flash");
+    });
 
     // 범죄사실 입력칸 · 복사
     var fb = $("facts-block");
@@ -344,9 +361,14 @@
     slot.appendChild(helpTpl.content.cloneNode(true));
   });
 
-  $("verified").textContent = "법령·판례 원문 대조 " + L.meta.verified;
+  $("verified").textContent = "법령·판례 원문 대조 " + L.meta.verified + " · 앱 " + L.meta.appVersion;
   if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
-    navigator.serviceWorker.register("sw.js").catch(function () {});
+    var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+    // 업데이트된 서비스워커가 제어를 넘겨받으면 한 번 새로고침해 최신 화면을 보여준다
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (hadController && !reloaded) { reloaded = true; location.reload(); }
+    });
+    navigator.serviceWorker.register("sw.js").then(function (reg) { reg.update(); }).catch(function () {});
   }
 
   setMode("use");

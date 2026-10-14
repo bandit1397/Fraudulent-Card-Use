@@ -58,7 +58,7 @@ node tests/run.js
 
 ## 수정하는 방법
 
-- 법이 바뀌면: `data/laws.js` 수정 → `meta.verified` 날짜 변경 → `sw.js` 의 `VERSION` 올리기 → `node tests/run.js`
+- 법이 바뀌면: `data/laws.js` 수정 → `meta.verified` 날짜 변경 → `meta.appVersion` 과 `sw.js` 의 `VERSION` 함께 올리기 → `node tests/run.js`
 - 판례 추가: `data/precedents.js` 에 추가 → 엔진 규칙 반영 → `tests/cases.js` 에 사안 추가
 - 현장 조치·질문 수정: `data/guides.js` 의 `ACTIONS`, `Q_VICTIM`, `Q_SUSPECT` (각 항목의 `when` 이 표시 조건)
 - 범죄사실 문안 수정: `data/guides.js` 의 `FACTS` (`조항:사용유형` → `조항:상황` → `조항` 순서로 찾음)
