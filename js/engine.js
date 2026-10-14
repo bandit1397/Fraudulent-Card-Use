@@ -103,7 +103,8 @@
     return {
       status: status, law: law, title: o.title || null, victim: o.victim || null,
       reason: o.reason || "", precs: o.precs || [], notes: o.notes || [], stage: o.stage || null,
-      fact: o.fact || null // 범죄사실 문안 키를 직접 지정할 때
+      fact: o.fact || null, // 범죄사실 문안 키를 직접 지정할 때
+      why: o.why || null    // 검토 이유: "noprec"(대법원 판례 없음) | "fact"(사실관계 확인 필요)
     };
   }
 
@@ -142,7 +143,7 @@
         out.push(F("apply", "형법347", { victim: "holder", reason: "명의자를 속여 " + obj + "를 교부받음 (사기)" }));
         break;
       case "entrusted":
-        out.push(F("review", "형법355①", { victim: "holder", fact: "형법355①:card", title: "횡령 (카드 자체를 영득했다면)", reason: "맡아 보관하던 " + obj + "를 돌려주지 않거나 자기 것처럼 처분했다면 횡령", notes: ["반환 거부·처분 여부 확인 — 맡은 상태에서 몰래 사용만 했다면 사용 단계의 죄명 위주로 검토"] }));
+        out.push(F("review", "형법355①", { why: "fact", victim: "holder", fact: "형법355①:card", title: "횡령 (카드 자체를 영득했다면)", reason: "맡아 보관하던 " + obj + "를 돌려주지 않거나 자기 것처럼 처분했다면 횡령", notes: ["반환 거부·처분 여부 확인 — 맡은 상태에서 몰래 사용만 했다면 사용 단계의 죄명 위주로 검토"] }));
         break;
       case "info_illegal":
         if (m === "cardinfo") {
@@ -156,8 +157,8 @@
         out.push(F("apply", "여전70①5", { victim: "public", reason: "행사할 목적으로 위조·변조 카드 취득" }));
         break;
       case "applied":
-        out.push(F("review", "형법231", { victim: "public", fact: "형법231:applied", title: "사문서위조·행사 (발급신청서)", reason: "타인 명의로 카드 발급신청서를 작성·제출" }));
-        out.push(F("review", "형법347", { victim: "cardco", fact: "형법347:applied", title: "사기 (카드사 기망 — 카드 발급)", reason: "명의를 모용해 카드사를 속여 카드를 발급받음" }));
+        out.push(F("review", "형법231", { why: "fact", victim: "public", fact: "형법231:applied", title: "사문서위조·행사 (발급신청서)", reason: "타인 명의로 카드 발급신청서를 작성·제출" }));
+        out.push(F("review", "형법347", { why: "fact", victim: "cardco", fact: "형법347:applied", title: "사기 (카드사 기망 — 카드 발급)", reason: "명의를 모용해 카드사를 속여 카드를 발급받음" }));
         break;
       case "borrowed":
         out.push(F("no", null, { title: "카드 취득 — 범죄 아님", reason: "명의자의 승낙을 받아 빌린 카드 — 취득 행위 자체는 처벌 대상이 아님", notes: ["승낙 범위를 넘어 쓴 경우는 '맡아서 보관 중 · 심부름으로 받음'을 선택", "카드를 빌려준 명의자(청소년 등)는 원칙적으로 처벌 대상 아님 — 부정 사용에 적극 가담했다면 방조 검토"] }));
@@ -166,7 +167,7 @@
         out.push(F("no", null, { title: "카드 취득 — 범죄 아님", reason: "본인 명의 카드", notes: ["할인 · 무임 자격이 없어진 사실을 알고도 계속 썼는지(고의)가 핵심 — 운영기관의 성인 전환 안내 · 자동 전환 여부 확인"] }));
         break;
       case "unknown":
-        out.push(F("review", null, { title: "취득 경위 수사 필요", reason: "명의자 진술로 '분실·도난' 여부를 먼저 확정하면 사용 단계 판단은 가능 (취득자가 처벌받을 필요 없음 — 99도857)", precs: ["99도857"], notes: ["취득 경위가 확인되면 절도·점유이탈물횡령·장물취득 중 해당 죄명 추가"] }));
+        out.push(F("review", null, { why: "fact", title: "취득 경위 수사 필요", reason: "명의자 진술로 '분실·도난' 여부를 먼저 확정하면 사용 단계 판단은 가능 (취득자가 처벌받을 필요 없음 — 99도857)", precs: ["99도857"], notes: ["취득 경위가 확인되면 절도·점유이탈물횡령·장물취득 중 해당 죄명 추가"] }));
         break;
     }
     out.forEach(function (f) { f.stage = "취득"; });
@@ -206,7 +207,7 @@
       }
     }
     if (inp.medium === "check") notes.push("체크카드는 직불카드(제2조 제6호) — 소액 신용한도 기능이 있으면 신용카드 측면도 검토");
-    return F(status, law, { victim: "public", reason: how, precs: precs, notes: notes });
+    return F(status, law, { victim: "public", reason: how, precs: precs, notes: notes, why: law === "여전70①4" && inp.acq === "entrusted" ? "fact" : null });
   }
 
   // ── 2. 사용 단계 ───────────────────────────────────────
@@ -248,7 +249,7 @@
           } else if (law === "여전70①2") {
             out.push(F("apply", "여전70①2", { title: "여신전문금융업법위반 (위조카드 사용 미수)", reason: "위조카드 사용은 미수도 처벌 (제70조 제6항)" }));
           }
-          out.push(F("review", "형법347", { victim: "merchant", title: "사기미수", reason: "카드를 제시해 가맹점을 속이려 한 실행의 착수 여부 확인 (형법 제352조)" }));
+          out.push(F("review", "형법347", { why: "fact", victim: "merchant", title: "사기미수", reason: "카드를 제시해 가맹점을 속이려 한 실행의 착수 여부 확인 (형법 제352조)" }));
         }
         break;
 
@@ -261,9 +262,9 @@
         }
         if (ok) {
           mis = misuseFinding(inp, "무인 단말기에 카드를 넣어 대금 결제 — 기계 결제도 카드 본래 용도의 사용으로 본 판례 취지(95도997)", ["95도997"]);
-          if (mis) { mis.status = mis.status === "apply" ? "review" : mis.status; mis.notes.push("무인 결제를 '사용'으로 직접 판단한 대법원 판례는 미확인 — 현금서비스 판례(95도997)의 취지상 해당 가능성이 높음"); out.push(mis); }
+          if (mis) { mis.status = mis.status === "apply" ? "review" : mis.status; mis.why = "noprec"; mis.notes.push("무인 결제를 '사용'으로 직접 판단한 대법원 판례는 미확인 — 현금서비스 판례(95도997)의 취지상 해당 가능성이 높음"); out.push(mis); }
           out.push(F("no", "형법347", { title: "사기 — 불성립 가능", reason: "속은 사람(처분행위자)이 없음" }));
-          out.push(F("review", null, { title: "물품 취득의 재산범죄 (절도 또는 컴퓨터등사용사기)", reason: "무인점포에서 물건을 가져간 경우 재물 취득은 절도, 결제로 얻은 이익은 컴퓨터등사용사기 검토 — 컴퓨터등사용사기의 객체는 재산상 이익만 (2002도2134)", precs: ["2002도2134"] }));
+          out.push(F("review", null, { why: "noprec", title: "물품 취득의 재산범죄 (절도 또는 컴퓨터등사용사기)", reason: "무인점포에서 물건을 가져간 경우 재물 취득은 절도, 결제로 얻은 이익은 컴퓨터등사용사기 검토 — 컴퓨터등사용사기의 객체는 재산상 이익만 (2002도2134)", precs: ["2002도2134"] }));
         } else if (m === "forged") {
           out.push(F("apply", "여전70①2", { title: "여신전문금융업법위반 (위조카드 사용 미수)", reason: "위조카드 사용은 미수도 처벌 (제70조 제6항)" }));
         } else if (misuseLaw(inp)) {
@@ -308,7 +309,7 @@
           out.push(F("no", misuseLaw(inp) || "여전70①3", { title: "카드 부정사용 — 미수(처벌 규정 없음)", reason: "현금서비스가 이루어지지 않음. 제70조 제6항은 제1호·제2호 미수만 처벌", precs: ["2007도8767"] }));
         }
         if (a === "deceived" || a === "extorted") {
-          out.push(F("review", "형법329", { victim: "bank", title: "별도 절도 성립 여부", reason: "속이거나 겁줘서 받은 카드의 예금 인출은 취득 범죄의 포괄일죄로 본 판례(2005도5869, 2007도1375)가 있으나, 현금서비스(카드사 대출)에 대한 직접 판례는 미확인", precs: ["2005도5869", "2007도1375"] }));
+          out.push(F("review", "형법329", { why: "noprec", victim: "bank", title: "별도 절도 성립 여부", reason: "속이거나 겁줘서 받은 카드의 예금 인출은 취득 범죄의 포괄일죄로 본 판례(2005도5869, 2007도1375)가 있으나, 현금서비스(카드사 대출)에 대한 직접 판례는 미확인", precs: ["2005도5869", "2007도1375"] }));
         } else {
           out.push(F(ok ? "apply" : "review", "형법329", { victim: "bank", title: ok ? "절도 (현금서비스로 받은 현금)" : "절도미수", reason: "현금을 취득하여 ATM 관리자의 지배를 배제", precs: a === "robbed" ? ["95도997", "2007도1375"] : ["95도997"], notes: ["카드 부정사용죄와 절도죄는 실체적 경합"] }));
         }
@@ -317,7 +318,7 @@
       // ATM 계좌이체
       case "atm_transfer":
         if (a === "deceived" || a === "extorted") {
-          out.push(F("review", a === "deceived" ? "형법347" : "형법350", { victim: "holder", title: (a === "deceived" ? "사기" : "공갈") + " 포괄일죄 여부", reason: "카드와 사용 승낙을 받은 경우 인출 판례(2005도5869, 2007도1375)의 취지상 취득 범죄에 포함될 가능성 — 계좌이체 직접 판례 미확인", precs: ["2005도5869", "2007도1375"] }));
+          out.push(F("review", a === "deceived" ? "형법347" : "형법350", { why: "noprec", victim: "holder", title: (a === "deceived" ? "사기" : "공갈") + " 포괄일죄 여부", reason: "카드와 사용 승낙을 받은 경우 인출 판례(2005도5869, 2007도1375)의 취지상 취득 범죄에 포함될 가능성 — 계좌이체 직접 판례 미확인", precs: ["2005도5869", "2007도1375"] }));
           break;
         }
         out.push(F(ok ? "apply" : "review", "형법347의2", { victim: "bank", title: ok ? "컴퓨터등사용사기 (계좌이체)" : "컴퓨터등사용사기 미수", reason: "타인 카드로 권한 없이 ATM에 정보를 입력해 자기(제3자) 계좌로 이체 — 피해자는 명의자 거래 금융기관", precs: ["2008도2440", "2006도2704"] }));
@@ -351,7 +352,7 @@
           out.push(F("no", "여전70①3", { title: "카드 부정사용 — 해당 없음", reason: "선불교통카드는 제3·4호 대상(신용·직불카드)이 아님" }));
           out.push(F("review", null, { title: "승차 행위의 별도 범죄", reason: "카드 잔액은 카드 자체의 영득(절도·점유이탈물횡령)에 포함된다고 볼지, 승차마다 별도 범죄(컴퓨터등사용사기 등)로 볼지 판례 미확인", notes: ["운임은 카드로 지급되었으므로 경범죄 무임승차·철도 부가운임 대상은 아님"] }));
         } else {
-          out.push(F("review", misuseLaw(inp) || "여전70①3", { victim: "public", title: "카드 부정사용 (교통카드 기능)", reason: "후불·체크 교통 기능으로 단말기에 태그한 것이 카드 본래 용도의 '사용'인지 — 판례 미확인, 현금서비스 판례(95도997) 취지상 해당 가능성" , precs: ["95도997"] }));
+          out.push(F("review", misuseLaw(inp) || "여전70①3", { why: "noprec", victim: "public", title: "카드 부정사용 (교통카드 기능)", reason: "후불·체크 교통 기능으로 단말기에 태그한 것이 카드 본래 용도의 '사용'인지 — 판례 미확인, 현금서비스 판례(95도997) 취지상 해당 가능성" , precs: ["95도997"] }));
           out.push(F("review", "형법347의2", { victim: "merchant", title: "운임 상당 재산상 이익", reason: "사람의 처분행위 없이 단말기 처리로 운임 결제 — 컴퓨터등사용사기 해당 여부 판례 미확인" }));
         }
         out.push(F("no", "경범3①39", { title: "무임승차 — 해당 없음", reason: "운임이 카드로 지급됨" }));
@@ -371,7 +372,7 @@
     out.push(F(ok ? "review" : "no", "형법347의2", { victim: "merchant", title: "컴퓨터등사용사기 (" + (free ? "운임 전액" : "운임 차액") + ")",
       reason: "할인 · 무임 대상이 아님에도 해당 카드를 단말기에 접촉해 " + what + "으로 처리되게 함 — 정상 운임과의 차액이 재산상 이익. 피해자는 운송사업자",
       precs: ["부산지법2019"], notes: ["대법원 판례 없음 — 하급심(부산지법 2019. 11. 13.)에서 자녀의 어린이 카드 사용에 컴퓨터등사용사기 등으로 벌금형 (언론 보도)", "버스에서 기사가 단말기 안내음을 듣고 태운 경우는 사람의 판단이 개입 — 사기(형법 제347조) 해당 여부도 검토", "소액 · 1회성이면 실무상 운영기관 부가운임 징수로 끝나는 경우가 많음 — 상습 · 다액 · 납부 거부 시 형사 입건 검토"] }));
-    out.push(F("review", "형법348의2", { victim: "merchant", title: "편의시설부정이용 해당 여부",
+    out.push(F("review", "형법348의2", { why: "noprec", victim: "merchant", title: "편의시설부정이용 해당 여부",
       reason: free ? "운임을 전혀 내지 않고 자동개집표기 등을 통과 — '대가를 지급하지 아니하고'에 해당할 여지가 큼" : "할인 운임은 냈으므로 '대가를 지급하지 아니하고'에 해당하는지 다툼",
       precs: ["2001도3625"] }));
     if (ok) out.push(F("review", "경범3①39", { victim: "merchant", title: "경범죄 무임승차", reason: "영업용 차량에 타고 정당한 이유 없이 '제 값'을 치르지 않음 — 형사 입건하지 않는 경미 사안은 범칙금 통고 검토" }));
@@ -483,17 +484,17 @@
     var f = [];
     var item = inp.item, role = inp.role, how = inp.how;
     if (role === "broker") {
-      if (item === "credit") f.push(F("review", "여전70④3", { fact: "여전70④3:알선", title: "신용카드 양도·양수 알선 — 공범(방조) 검토", reason: "여신전문금융업법에는 알선 처벌 규정이 따로 없음" }));
+      if (item === "credit") f.push(F("review", "여전70④3", { why: "fact", fact: "여전70④3:알선", title: "신용카드 양도·양수 알선 — 공범(방조) 검토", reason: "여신전문금융업법에는 알선 처벌 규정이 따로 없음" }));
       else f.push(F("apply", "전금49④4", { reason: "양도·대여 등을 알선·중개·광고하거나 대가를 받고 권유" }));
     } else if (item === "accountinfo") {
-      f.push(F(how === "rent_crime" ? "apply" : "review", "전금49④5", { reason: "범죄에 이용할 목적 또는 범죄에 이용될 것을 알면서 계좌정보를 제공(제공받음)·보관·전달", notes: ["범죄 이용에 대한 인식(미필적 인식 포함)이 있어야 성립 — 인식 여부 확인"] }));
+      f.push(F(how === "rent_crime" ? "apply" : "review", "전금49④5", { why: "fact", reason: "범죄에 이용할 목적 또는 범죄에 이용될 것을 알면서 계좌정보를 제공(제공받음)·보관·전달", notes: ["범죄 이용에 대한 인식(미필적 인식 포함)이 있어야 성립 — 인식 여부 확인"] }));
     } else if (item === "credit") {
       if (how === "sell") {
         f.push(F("apply", "여전70④3", { reason: "신용카드를 " + (role === "give" ? "양도" : "양수") + " (제15조 위반)" }));
       } else if (how === "pledge") {
         f.push(F("no", "여전70④3", { title: "신용카드 질권설정 — 처벌 규정 없음", reason: "제15조는 질권 설정도 금지하지만 처벌조항(제70조 제4항 제3호)은 '양도·양수'만 처벌", notes: ["돌려받지 않기로 한 확정적 이전이면 '양도'로 검토", "전자금융거래법상 접근매체 질권(제49조 제4항 제3호) 적용 여부는 수사팀 검토"] }));
       } else {
-        f.push(F("review", "여전70④3", { fact: "여전70④3:대여", title: "신용카드 대여 — 양도 해당 여부", reason: "제15조는 양도·양수·질권만 금지 — 대여는 직접 규정 없음. 돌려받을 예정 없는 확정적 이전인지 확인", notes: ["신용카드도 전자식 카드로서 전자금융거래법상 접근매체에 해당하는지 검토 (제6조 제3항 '다른 법률에 특별한 규정이 없는 한')"] }));
+        f.push(F("review", "여전70④3", { why: "fact", fact: "여전70④3:대여", title: "신용카드 대여 — 양도 해당 여부", reason: "제15조는 양도·양수·질권만 금지 — 대여는 직접 규정 없음. 돌려받을 예정 없는 확정적 이전인지 확인", notes: ["신용카드도 전자식 카드로서 전자금융거래법상 접근매체에 해당하는지 검토 (제6조 제3항 '다른 법률에 특별한 규정이 없는 한')"] }));
       }
     } else {
       switch (how) {
@@ -514,7 +515,7 @@
           f.push(F("apply", "전금49④3", { reason: "접근매체를 질권(담보)의 목적으로 함" }));
           break;
         case "free_family":
-          f.push(F("review", "전금49④2", { title: "처벌 대상 여부", reason: "대가도 없고 범죄 이용 인식도 없는 단순 대여는 제6조 제3항 제2·3호에 해당하지 않을 수 있음 — 대가·인식 여부 확인" }));
+          f.push(F("review", "전금49④2", { why: "fact", title: "처벌 대상 여부", reason: "대가도 없고 범죄 이용 인식도 없는 단순 대여는 제6조 제3항 제2·3호에 해당하지 않을 수 있음 — 대가·인식 여부 확인" }));
           break;
       }
     }
@@ -576,8 +577,8 @@
       case "coin_machine":
       case "payphone":
         f.push(F("apply", "형법348의2", { victim: "merchant", title: "편의시설부정이용" + (ok ? "" : " 미수"), reason: "부정한 방법으로 대가를 지급하지 않고 유료자동설비를 이용해 " + (inp.facilityCase === "vending" ? "재물(물건)" : "재산상 이익(이용)") + "을 취득" + (ok ? "" : " — 미수도 처벌 (제352조)") }));
-        if (inp.facilityCase === "vending") f.push(F("review", null, { title: "위조 동전을 쓴 경우", reason: "위조한 대한민국 주화를 사용했다면 위조통화행사(형법 제207조) 검토 — 외국 동전 · 이물질은 해당 없음" }));
-        f.push(F("review", "형법366", { title: "기기를 부순 경우 — 재물손괴", reason: "기기를 열거나 부숴 이용했다면 재물손괴 별도 검토 (실체적 경합)" }));
+        if (inp.facilityCase === "vending") f.push(F("review", null, { why: "fact", title: "위조 동전을 쓴 경우", reason: "위조한 대한민국 주화를 사용했다면 위조통화행사(형법 제207조) 검토 — 외국 동전 · 이물질은 해당 없음" }));
+        f.push(F("review", "형법366", { why: "fact", title: "기기를 부순 경우 — 재물손괴", reason: "기기를 열거나 부숴 이용했다면 재물손괴 별도 검토 (실체적 경합)" }));
         break;
       case "gate_jump":
         f.push(F(ok ? "review" : "no", "형법348의2", { victim: "merchant", title: "편의시설부정이용", reason: "운임을 내지 않고 자동개집표기를 통과 — 하급심에서 개찰구 무단통과를 편의시설부정이용 등으로 처벌한 사례 (대법원 판례 없음)", precs: ["부산지법2019"] }));
@@ -586,7 +587,7 @@
         break;
       case "bus_no_pay":
         f.push(F(ok ? "apply" : "no", "경범3①39", { victim: "merchant", title: "경범죄 무임승차", reason: "버스에 타고 정당한 이유 없이 요금을 내지 않음" }));
-        f.push(F("review", "형법347", { victim: "merchant", title: "사기 (운전기사를 속인 경우)", reason: "태그한 척하거나 거짓말로 운전기사를 속여 탔다면 사기 검토 — 상습 · 다액이면 형사 입건" }));
+        f.push(F("review", "형법347", { why: "fact", victim: "merchant", title: "사기 (운전기사를 속인 경우)", reason: "태그한 척하거나 거짓말로 운전기사를 속여 탔다면 사기 검토 — 상습 · 다액이면 형사 입건" }));
         f.push(F("review", "철도10", { title: "부가금 (운송약관)", reason: "버스 운송약관에 따른 부가금 — 서울시는 미납 시 경범죄 고발" }));
         break;
       case "others_card":
@@ -610,15 +611,29 @@
     return list;
   }
 
+  // 검토 이유를 지정하지 않은 항목: 대법원 판례가 붙어 있으면 '사실관계 확인 필요', 없으면(하급심만 포함) '대법원 판례 없음'
+  function classifyReview(r) {
+    var P = root.PRECEDENTS || {};
+    r.findings.forEach(function (f) {
+      if (f.status !== "review" || f.why) return;
+      if (f.law && root.LAWS[f.law] && root.LAWS[f.law].penal === false) return; // 부가운임 등 형벌이 아닌 안내
+      var supreme = f.precs.some(function (p) { return P[p] && !P[p].lower; });
+      f.why = supreme ? "fact" : "noprec";
+    });
+    return r;
+  }
+
+  var WHY = { noprec: "대법원 판례 없음", fact: "사실관계 확인 필요" };
+
   function analyze(inp) {
-    if (inp.mode === "mule") return analyzeMule(inp);
-    if (inp.mode === "money") return analyzeMoney(inp);
-    if (inp.mode === "facility") return analyzeFacility(inp);
-    return analyzeUse(inp);
+    if (inp.mode === "mule") return classifyReview(analyzeMule(inp));
+    if (inp.mode === "money") return classifyReview(analyzeMoney(inp));
+    if (inp.mode === "facility") return classifyReview(analyzeFacility(inp));
+    return classifyReview(analyzeUse(inp));
   }
 
   var api = {
-    analyze: analyze,
+    analyze: analyze, WHY: WHY,
     MEDIA: MEDIA, ACQ: ACQ, ACQ_BY_MEDIUM: ACQ_BY_MEDIUM, USES: USES, USES_BY_MEDIUM: USES_BY_MEDIUM,
     RELATION: RELATION, DATE: DATE, MULE_ITEM: MULE_ITEM, MULE_ROLE: MULE_ROLE, MULE_HOW: MULE_HOW, MONEY_CASE: MONEY_CASE, FACILITY_CASE: FACILITY_CASE, FACILITY_RESULT: FACILITY_RESULT
   };

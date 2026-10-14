@@ -231,3 +231,8 @@ button.crime-tag{font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .top-inner{position:relative;justify-content:center}
 .top-inner h1{text-align:center;padding:0 44px}
 .top-inner #theme{position:absolute;right:16px;top:50%;transform:translateY(-50%)}
+
+/* 검토 이유 표시 */
+.why{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin:0 4px;vertical-align:1px;border:1px solid}
+.why-noprec{color:var(--no);border-color:var(--no);background:var(--no-soft)}
+.why-fact{color:var(--c4);border-color:var(--c4);background:var(--c4s)}

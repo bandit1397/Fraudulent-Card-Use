@@ -129,7 +129,8 @@
   }
 
   function findingHtml(f) {
-    var badge = { apply: '<span class="badge b-apply">적용</span>', review: '<span class="badge b-review">검토</span>', no: '<span class="badge b-no">불성립</span>' }[f.status];
+    var badge = { apply: '<span class="badge b-apply">적용</span>', review: '<span class="badge b-review">검토</span>', no: '<span class="badge b-no">불성립</span>' }[f.status] +
+      (f.status === "review" && f.why ? '<span class="why why-' + f.why + '">' + esc(E.WHY[f.why]) + "</span>" : "");
     var name = f.title || (L[f.law] ? L[f.law].name : "");
     var meta = [lawLabel(f.law), f.status === "apply" ? f.penalty : ""].filter(Boolean).join(" · ");
     return '<div class="finding ' + f.status + '"><h3>' + badge + esc(name) + "</h3>" +
@@ -171,7 +172,10 @@
     });
     if (keys.review[k]) add("현장에서 확정하지 말고 수사팀 · 검사와 협의한 뒤 적용 여부를 정할 것");
     if (!items.length) return "";
-    return '<div class="caution' + (keys.review[k] ? " review" : "") + '"><b>유의사항</b><ul>' +
+    var whys = [];
+    keys.findings[k].forEach(function (f) { if (f.status === "review" && f.why && whys.indexOf(f.why) < 0) whys.push(f.why); });
+    var whyHtml = whys.map(function (w) { return '<span class="why why-' + w + '">' + esc(E.WHY[w]) + "</span>"; }).join("");
+    return '<div class="caution' + (keys.review[k] ? " review" : "") + '"><b>유의사항 ' + whyHtml + '</b><ul>' +
       items.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" + precButtons(precs) + "</div>";
   }
 
@@ -188,7 +192,7 @@
       var sub = [];
       if (keys.review[k] && f0.title && f0.title !== L[f0.law].name) sub.push(f0.title);
       if (f0.useType && E.USES[f0.useType]) sub.push(E.USES[f0.useType].split(" (")[0]);
-      return '<div class="fact-head" id="draft-' + i + '" data-law="' + esc(f0.law) + '"><span>' + (i + 1) + ". " + esc(name) + (keys.review[k] ? ' <span class="badge b-review">검토</span>' : ' <span class="badge b-apply">적용</span>') +
+      return '<div class="fact-head" id="draft-' + i + '" data-law="' + esc(f0.law) + '"><span>' + (i + 1) + ". " + esc(name) + (keys.review[k] ? ' <span class="badge b-review">검토</span>' + (f0.why ? '<span class="why why-' + f0.why + '">' + esc(E.WHY[f0.why]) + "</span>" : "") : ' <span class="badge b-apply">적용</span>') +
         (sub.length ? '<small class="fact-sub">' + esc(sub.join(" · ")) + "</small>" : "") + '</span><button type="button" class="copy" data-i="' + i + '">복사</button></div>' +
         '<div class="fact" id="fact-' + i + '">' + esc(factText(G.facts[k], defaults)) + "</div>" + cautionHtml(k, keys);
     }).join("");
@@ -250,7 +254,7 @@
     var isOpen = function (id, def) { return (id in open ? open[id] : def) ? " open" : ""; };
 
     out.innerHTML =
-      '<div class="summary"><h2>30초 요약 — 적용 죄명 <small class="legend">(검토) = 판례 미확정 · 수사팀 판단 필요</small></h2>' + tags + conc + "</div>" +
+      '<div class="summary"><h2>30초 요약 — 적용 죄명 <small class="legend">(검토) = 대법원 판례가 없거나, 사실관계에 따라 결론이 달라지는 죄명</small></h2>' + tags + conc + "</div>" +
       '<details class="block" id="detail-block"' + isOpen("detail-block", true) + '><summary>단계별 검토 (' + r.findings.length + '건)</summary><div class="body">' + detail + "</div></details>" +
       '<details class="block" id="action-block"' + isOpen("action-block", false) + '><summary>현장 조치 · 증거 확보 (' + (g.actions.length + g.evidence.length) + '건)</summary><div class="body">' + actions + "</div></details>" +
       '<details class="block" id="question-block"' + isOpen("question-block", false) + '><summary>질문 목록 (' + (g.victim.length + g.suspect.length) + '건)</summary><div class="body">' + qs + "</div></details>" +

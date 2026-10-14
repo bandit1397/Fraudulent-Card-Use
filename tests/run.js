@@ -70,6 +70,25 @@ Object.keys(Engine.ACQ_BY_MEDIUM).forEach(function (m) {
     });
   });
 });
+// ── 검토 이유(대법원 판례 없음 / 사실관계 확인 필요) ─────────────
+function whyOf(inp, law) {
+  var r = Engine.analyze(JSON.parse(JSON.stringify(inp)));
+  var f = r.findings.filter(function (x) { return x.status === "review" && x.law === law; })[0];
+  return f ? f.why : "없음";
+}
+[
+  [{ mode: "use", date: "after20251223", medium: "discount_card", acq: "borrowed", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] }, "형법347의2", "noprec"],
+  [{ mode: "use", date: "after20251223", medium: "credit", acq: "found", relation: "none", uses: [{ type: "kiosk", result: "ok" }] }, "여전70①3", "noprec"],
+  [{ mode: "use", date: "after20251223", medium: "credit", acq: "extorted", relation: "none", uses: [{ type: "store", result: "ok" }] }, "여전70①4", "fact"],
+  [{ mode: "use", date: "after20251223", medium: "credit", acq: "entrusted", relation: "none", uses: [{ type: "store", result: "ok" }] }, "여전70①4", "fact"],
+  [{ mode: "use", date: "after20251223", medium: "credit", acq: "entrusted", relation: "none", uses: [{ type: "store", result: "ok" }] }, "형법355①", "fact"],
+  [{ mode: "mule", item: "access", role: "give", how: "loan_bait", date: "after20251223" }, "전금49④1", "fact"],
+  [{ mode: "facility", facilityCase: "gate_jump", result: "ok", date: "after20251223" }, "형법348의2", "noprec"]
+].forEach(function (t) {
+  var w = whyOf(t[0], t[1]);
+  if (w !== t[2]) { fail++; console.log("✗ 검토 이유 " + t[1] + ": 기대 " + t[2] + ", 실제 " + w); }
+});
+
 // ── 현장 조치 · 질문 · 범죄사실이 사건 조건에 맞게 나오는지 ─────────
 var G = require("../data/guides.js");
 var guideFail = 0;
@@ -81,6 +100,7 @@ function guideCheck(label, inp) {
     if (f.status === "review" && f.law && LAWS[f.law].penal !== false && !G.factKey(f, ctx)) errs.push("검토 죄명 문안 없음: " + f.law + (f.useType ? ":" + f.useType : ""));
     if (f.law && LAWS[f.law].penal === false && G.factKey(f, ctx)) errs.push("형벌 아닌 항목에 문안: " + f.law);
   });
+  r.findings.forEach(function (f) { if (f.status === "review" && !f.why && !(f.law && LAWS[f.law].penal === false)) errs.push("검토 이유 없음: " + (f.law || f.title)); });
   if (!g.actions.length) errs.push("현장 조치 없음");
   if (!g.victim.length || !g.suspect.length) errs.push("질문 목록 없음");
   if (inp.mode === "use" && !g.evidence.length) errs.push("증거 목록 없음");
