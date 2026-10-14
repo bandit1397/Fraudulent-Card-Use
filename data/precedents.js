@@ -22,6 +22,16 @@ var PRECEDENTS = {
   "99도857": { seq: 117890, date: "1999. 7. 9.",
     title: "카드를 몰래 가져가 쓰고 곧 반환",
     holding: "카드를 일시 사용하고 곧 반환한 경우 카드 자체에 대한 불법영득의사가 없어 카드 절도는 불성립. '분실·도난 카드'는 점유자의 의사에 반하여 점유가 배제된 카드면 되고, 취득자가 유죄 처벌받을 것을 요하지 않는다." },
+  "2001도3625": { seq: 80922, date: "2001. 9. 25.",
+    title: "훔친 후불식 전화카드로 공중전화 — 편의시설부정이용 아님",
+    holding: "타인의 후불식 전화카드를 절취해 공중전화에 이용하면 통신요금은 카드 명의자가 부담하므로 '대가를 지급하지 아니하고' 이용한 경우가 아니어서 편의시설부정이용죄가 성립하지 않는다." },
+  "2002도461": { seq: 81689, date: "2002. 6. 25.",
+    title: "훔친 후불식 전화카드 사용 — 사문서부정행사",
+    holding: "전화카드는 자기띠와 플라스틱 카드가 결합된 하나의 문서이므로, 절취한 전화카드를 공중전화기에 넣어 사용한 것은 권리의무에 관한 타인의 사문서를 부정행사한 경우에 해당한다." },
+  "부산지법2019": { court: "부산지방법원", label: "부산지법 2019. 11. 13.", date: "2019. 11. 13.", lower: true,
+    url: "https://m.lawyersite.co.kr/1622",
+    title: "개찰구 무단통과 + 자녀의 어린이 교통카드 사용 — 벌금 70만원 (하급심 · 언론 보도)",
+    holding: "성인이 개찰구를 뛰어넘거나 비상문으로 11회 무임승차하고(14,300원), 딸의 어린이용 교통카드로 5회 승차해 운임 차액 3,250원을 내지 않은 사건. 편의시설부정이용·컴퓨터등사용사기 등으로 약식기소되어 벌금 70만원 선고. 사건번호·판결문 미확인 — 언론 보도(2020. 1.) 기준이며 대법원 판례는 아님." },
   "2002도2134": { seq: 126448, date: "2002. 7. 12.",
     title: "타인 명의를 모용해 발급받은 카드로 현금서비스",
     holding: "명의를 모용하여 발급받은 카드로 ATM 현금대출을 받은 행위는 절도죄. 컴퓨터등사용사기죄의 객체는 재산상 이익뿐이므로 현금(재물) 인출에는 적용할 수 없다." },
@@ -77,7 +87,14 @@ var PRECEDENTS = {
 
 function precUrl(no) {
   var p = PRECEDENTS[no];
-  return p ? "https://www.law.go.kr/LSW/precInfoP.do?precSeq=" + p.seq : null;
+  if (!p) return null;
+  return p.seq ? "https://www.law.go.kr/LSW/precInfoP.do?precSeq=" + p.seq : p.url;
 }
 
-if (typeof module !== "undefined") module.exports = { PRECEDENTS: PRECEDENTS, precUrl: precUrl };
+// 화면에 표시할 판례 이름 (대법원이 아니면 법원명 포함)
+function precLabel(no) {
+  var p = PRECEDENTS[no];
+  return p && p.label ? p.label : "대법원 " + no;
+}
+
+if (typeof module !== "undefined") module.exports = { PRECEDENTS: PRECEDENTS, precUrl: precUrl, precLabel: precLabel };

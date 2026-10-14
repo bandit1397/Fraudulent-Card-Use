@@ -21,6 +21,7 @@
     <button role="tab" data-mode="use" aria-selected="true">카드·계좌 무단사용</button>
     <button role="tab" data-mode="mule">대포통장·카드</button>
     <button role="tab" data-mode="money">잘못 들어온 돈</button>
+    <button role="tab" data-mode="facility">편의시설·무임승차</button>
     <button role="tab" data-mode="ref">법령·판례</button>
   </nav>
 </header>
@@ -70,6 +71,14 @@
       <div class="sub-q">금액 (선택)</div>
       <input id="amount2" class="text" inputmode="numeric" placeholder="예: 1500000">
     </div>
+  </section>
+
+  <!-- 편의시설 부정이용 · 무임승차 -->
+  <section id="mode-facility" class="mode" hidden>
+    <div class="step"><h2><span class="n">1</span>어떤 상황인가</h2><div class="chips" id="facilityCase"></div>
+      <p class="basis" style="margin:8px 0 0">청소년 · 어린이 · 경로 교통카드를 자격 없이 쓴 경우는 '카드·계좌 무단사용' 메뉴에서 교통카드를 고른 뒤 사용 행위로 선택하세요.</p>
+    </div>
+    <div class="step"><h2><span class="n">2</span>결과</h2><div class="chips" id="facilityResult"></div></div>
   </section>
 
   <!-- 결과 -->

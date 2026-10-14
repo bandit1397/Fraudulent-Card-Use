@@ -38,15 +38,17 @@
     made: "직접 위조 · 변조함",
     obtained: "위조 · 변조 카드를 구입 · 입수함",
     applied: "타인 명의를 도용해 발급 신청",
+    borrowed: "명의자(가족 등)에게 빌림 · 사용 승낙 있음",
+    own: "본인 명의 카드 (할인 · 무임 자격이 없어짐)",
     unknown: "취득 경위 불명"
   };
 
   // 수단별로 선택 가능한 취득 경위
   var ACQ_BY_MEDIUM = {
-    credit: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "entrusted", "unknown"],
-    check: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "entrusted", "unknown"],
+    credit: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "entrusted", "borrowed", "own", "unknown"],
+    check: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "entrusted", "borrowed", "own", "unknown"],
     cash: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "entrusted", "unknown"],
-    prepaid: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "unknown"],
+    prepaid: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "borrowed", "own", "unknown"],
     cardinfo: ["info_illegal", "info_known", "found", "stolen"],
     phone: ["stolen", "found", "temp", "entrusted", "info_known", "robbed", "unknown"],
     forged: ["made", "obtained"],
@@ -61,14 +63,16 @@
     atm_transfer: "ATM에서 계좌이체",
     online: "온라인 · 앱 결제 / 비대면 대출",
     bank_transfer: "모바일 · 인터넷뱅킹 계좌이체",
-    transit: "지하철 · 버스 승차"
+    transit: "지하철 · 버스 승차",
+    discount_transit: "청소년 · 어린이 할인 교통카드로 승차 (할인 대상 아님)",
+    free_transit: "경로 · 장애인 등 무임 교통카드로 승차 (무임 대상 아님)"
   };
 
   var USES_BY_MEDIUM = {
-    credit: ["store", "kiosk", "cash_service", "atm_transfer", "online", "transit"],
-    check: ["store", "kiosk", "atm_cash", "atm_transfer", "online", "transit"],
+    credit: ["store", "kiosk", "cash_service", "atm_transfer", "online", "transit", "discount_transit"],
+    check: ["store", "kiosk", "atm_cash", "atm_transfer", "online", "transit", "discount_transit"],
     cash: ["atm_cash", "atm_transfer"],
-    prepaid: ["store", "kiosk", "transit"],
+    prepaid: ["store", "kiosk", "transit", "discount_transit", "free_transit"],
     cardinfo: ["online"],
     phone: ["store", "online", "bank_transfer"],
     forged: ["store", "kiosk", "cash_service"],
@@ -146,6 +150,12 @@
         out.push(F("review", "형법231", { victim: "public", title: "사문서위조·행사 (발급신청서)", reason: "타인 명의로 카드 발급신청서를 작성·제출" }));
         out.push(F("review", "형법347", { victim: "cardco", title: "사기 (카드사 기망 — 카드 발급)", reason: "명의를 모용해 카드사를 속여 카드를 발급받음" }));
         break;
+      case "borrowed":
+        out.push(F("no", null, { title: "카드 취득 — 범죄 아님", reason: "명의자의 승낙을 받아 빌린 카드 — 취득 행위 자체는 처벌 대상이 아님", notes: ["승낙 범위를 넘어 쓴 경우는 '맡아서 보관 중 · 심부름으로 받음'을 선택", "카드를 빌려준 명의자(청소년 등)는 원칙적으로 처벌 대상 아님 — 부정 사용에 적극 가담했다면 방조 검토"] }));
+        break;
+      case "own":
+        out.push(F("no", null, { title: "카드 취득 — 범죄 아님", reason: "본인 명의 카드", notes: ["할인 · 무임 자격이 없어진 사실을 알고도 계속 썼는지(고의)가 핵심 — 운영기관의 성인 전환 안내 · 자동 전환 여부 확인"] }));
+        break;
       case "unknown":
         out.push(F("review", null, { title: "취득 경위 수사 필요", reason: "명의자 진술로 '분실·도난' 여부를 먼저 확정하면 사용 단계 판단은 가능 (취득자가 처벌받을 필요 없음 — 99도857)", precs: ["99도857"], notes: ["취득 경위가 확인되면 절도·점유이탈물횡령·장물취득 중 해당 죄명 추가"] }));
         break;
@@ -161,7 +171,7 @@
     if (LOST_STOLEN.indexOf(inp.acq) >= 0) return "여전70①3";
     if (inp.acq === "robbed" || inp.acq === "extorted" || inp.acq === "deceived") return "여전70①4";
     if (inp.acq === "entrusted") return "여전70①4"; // 횡령한 카드인 경우에만
-    return null;
+    return null; // borrowed · own: 명의자 승낙 또는 본인 카드
   }
 
   function misuseFinding(inp, how, okPrecs) {
@@ -194,6 +204,12 @@
   function useFindings(inp, use) {
     var m = inp.medium, a = inp.acq, ok = use.result !== "denied", out = [];
     var mis;
+
+    if (use.type === "discount_transit" || use.type === "free_transit") return discountTransit(inp, use);
+    if (a === "borrowed" || a === "own") {
+      out.push(F("no", null, { title: "카드 사용 — 범죄 아님", reason: (a === "own" ? "본인 카드" : "명의자 승낙 범위 안의 사용") + " — 카드 부정사용 · 사기 등 불성립", notes: ["할인 · 무임 교통카드를 자격 없이 쓴 경우는 사용 행위에서 '청소년 · 어린이 할인' 또는 '경로 · 장애인 등 무임'을 선택"] }));
+      return out;
+    }
 
     switch (use.type) {
       // 대면 가맹점 결제
@@ -324,6 +340,27 @@
         out.push(F("no", "경범3①39", { title: "무임승차 — 해당 없음", reason: "운임이 카드로 지급됨" }));
         break;
     }
+    return out;
+  }
+
+  // 할인 · 무임 교통카드를 자격 없는 사람이 사용
+  function discountTransit(inp, use) {
+    var a = inp.acq, ok = use.result !== "denied", out = [], free = use.type === "free_transit";
+    var what = free ? "무임 운임" : "할인 운임";
+    // 남의 카드를 주웠거나 훔친 경우 카드 자체 · 잔액 문제는 일반 승차와 같다
+    if (LOST_STOLEN.indexOf(a) >= 0 || a === "robbed" || a === "extorted" || a === "deceived") {
+      useFindings(inp, { type: "transit", result: use.result }).forEach(function (f) { if (f.law !== "경범3①39") out.push(f); });
+    }
+    out.push(F(ok ? "review" : "no", "형법347의2", { victim: "merchant", title: "컴퓨터등사용사기 (" + (free ? "운임 전액" : "운임 차액") + ")",
+      reason: "할인 · 무임 대상이 아님에도 해당 카드를 단말기에 접촉해 " + what + "으로 처리되게 함 — 정상 운임과의 차액이 재산상 이익. 피해자는 운송사업자",
+      precs: ["부산지법2019"], notes: ["대법원 판례 없음 — 하급심(부산지법 2019. 11. 13.)에서 자녀의 어린이 카드 사용에 컴퓨터등사용사기 등으로 벌금형 (언론 보도)", "버스에서 기사가 단말기 안내음을 듣고 태운 경우는 사람의 판단이 개입 — 사기(형법 제347조) 해당 여부도 검토", "소액 · 1회성이면 실무상 운영기관 부가운임 징수로 끝나는 경우가 많음 — 상습 · 다액 · 납부 거부 시 형사 입건 검토"] }));
+    out.push(F("review", "형법348의2", { victim: "merchant", title: "편의시설부정이용 해당 여부",
+      reason: free ? "운임을 전혀 내지 않고 자동개집표기 등을 통과 — '대가를 지급하지 아니하고'에 해당할 여지가 큼" : "할인 운임은 냈으므로 '대가를 지급하지 아니하고'에 해당하는지 다툼",
+      precs: ["2001도3625"] }));
+    if (ok) out.push(F("review", "경범3①39", { victim: "merchant", title: "경범죄 무임승차", reason: "영업용 차량에 타고 정당한 이유 없이 '제 값'을 치르지 않음 — 형사 입건하지 않는 경미 사안은 범칙금 통고 검토" }));
+    var fare = F("review", "철도10", { title: "부가운임 징수 (운영기관)", reason: "철도는 승차 구간 운임 외 30배 범위, 도시철도 · 버스는 운송약관에 따른 부가금 — 형벌이 아니라 운영기관이 징수. 미납 시 경범죄 고발 등 실무 확인" });
+    if (a === "own") fare.notes.push("본인 카드 — 자격 상실을 알았는지(고의) 확인. 몰랐다면 범죄 불성립");
+    out.push(fare);
     return out;
   }
 
@@ -504,6 +541,46 @@
     return { findings: f, concurrence: conc, summary: summarize(f) };
   }
 
+  // ── 진입점: 편의시설 부정이용 ─────────────────────────
+  var FACILITY_CASE = {
+    vending: "위조 · 외국 동전, 이물질 등으로 자판기에서 물건을 꺼냄",
+    coin_machine: "코인세탁기 · 코인노래방 · 인형뽑기 · 주차정산기 등을 조작해 무료로 이용",
+    payphone: "공중전화를 조작해 무료로 통화",
+    gate_jump: "지하철 개찰구를 뛰어넘거나 비상문 · 꼬리물기로 통과",
+    bus_no_pay: "버스에 요금을 내지 않고 승차 (태그한 척 등)",
+    others_card: "남의 후불식 카드(전화카드 등)를 훔치거나 주워 유료설비에 사용"
+  };
+  var FACILITY_RESULT = { ok: "이용함 (물건 · 서비스 취득)", denied: "시도했으나 실패" };
+
+  function analyzeFacility(inp) {
+    var f = [], ok = inp.result !== "denied";
+    switch (inp.facilityCase) {
+      case "vending":
+      case "coin_machine":
+      case "payphone":
+        f.push(F("apply", "형법348의2", { victim: "merchant", title: "편의시설부정이용" + (ok ? "" : " 미수"), reason: "부정한 방법으로 대가를 지급하지 않고 유료자동설비를 이용해 " + (inp.facilityCase === "vending" ? "재물(물건)" : "재산상 이익(이용)") + "을 취득" + (ok ? "" : " — 미수도 처벌 (제352조)") }));
+        if (inp.facilityCase === "vending") f.push(F("review", null, { title: "위조 동전을 쓴 경우", reason: "위조한 대한민국 주화를 사용했다면 위조통화행사(형법 제207조) 검토 — 외국 동전 · 이물질은 해당 없음" }));
+        f.push(F("review", "형법366", { title: "기기를 부순 경우 — 재물손괴", reason: "기기를 열거나 부숴 이용했다면 재물손괴 별도 검토 (실체적 경합)" }));
+        break;
+      case "gate_jump":
+        f.push(F(ok ? "review" : "no", "형법348의2", { victim: "merchant", title: "편의시설부정이용", reason: "운임을 내지 않고 자동개집표기를 통과 — 하급심에서 개찰구 무단통과를 편의시설부정이용 등으로 처벌한 사례 (대법원 판례 없음)", precs: ["부산지법2019"] }));
+        f.push(F(ok ? "apply" : "no", "경범3①39", { victim: "merchant", title: "경범죄 무임승차", reason: "영업용 차량(지하철)에 타고 정당한 이유 없이 제 값을 치르지 않음 — 경미 사안은 범칙금 통고" }));
+        f.push(F("review", "철도10", { title: "부가운임 징수 (운영기관)", reason: "운영기관이 승차 구간 운임 외 부가금(철도 30배 범위)을 징수 — 형벌 아님" }));
+        break;
+      case "bus_no_pay":
+        f.push(F(ok ? "apply" : "no", "경범3①39", { victim: "merchant", title: "경범죄 무임승차", reason: "버스에 타고 정당한 이유 없이 요금을 내지 않음" }));
+        f.push(F("review", "형법347", { victim: "merchant", title: "사기 (운전기사를 속인 경우)", reason: "태그한 척하거나 거짓말로 운전기사를 속여 탔다면 사기 검토 — 상습 · 다액이면 형사 입건" }));
+        f.push(F("review", "철도10", { title: "부가금 (운송약관)", reason: "버스 운송약관에 따른 부가금 — 서울시는 미납 시 경범죄 고발" }));
+        break;
+      case "others_card":
+        f.push(F("no", "형법348의2", { title: "편의시설부정이용 — 불성립", reason: "요금은 카드 명의자가 부담하게 되므로 '대가를 지급하지 아니하고' 이용한 것이 아님", precs: ["2001도3625"] }));
+        f.push(F(ok ? "apply" : "no", "형법236", { victim: "holder", title: "사문서부정행사", reason: "후불식 전화카드는 하나의 사문서 — 공중전화기에 넣어 사용하면 부정행사", precs: ["2002도461"], notes: ["카드 자체는 절도 · 점유이탈물횡령 별도", "신용 · 체크 · 교통카드는 '카드·계좌 무단사용' 메뉴에서 판단 — IC 교통카드에 사문서부정행사를 적용한 판례는 미확인"] }));
+        break;
+    }
+    f.forEach(function (x) { x.stage = "편의시설 이용"; x.useType = inp.facilityCase; x.penalty = x.law ? penaltyFor(x.law, inp) : ""; });
+    return { findings: f, concurrence: [], summary: summarize(f) };
+  }
+
   // ── 요약: 적용 죄명 목록 (중복 제거) ─────────────────────
   function summarize(findings) {
     var seen = {}, list = [];
@@ -519,13 +596,14 @@
   function analyze(inp) {
     if (inp.mode === "mule") return analyzeMule(inp);
     if (inp.mode === "money") return analyzeMoney(inp);
+    if (inp.mode === "facility") return analyzeFacility(inp);
     return analyzeUse(inp);
   }
 
   var api = {
     analyze: analyze,
     MEDIA: MEDIA, ACQ: ACQ, ACQ_BY_MEDIUM: ACQ_BY_MEDIUM, USES: USES, USES_BY_MEDIUM: USES_BY_MEDIUM,
-    RELATION: RELATION, DATE: DATE, MULE_ITEM: MULE_ITEM, MULE_ROLE: MULE_ROLE, MULE_HOW: MULE_HOW, MONEY_CASE: MONEY_CASE
+    RELATION: RELATION, DATE: DATE, MULE_ITEM: MULE_ITEM, MULE_ROLE: MULE_ROLE, MULE_HOW: MULE_HOW, MONEY_CASE: MONEY_CASE, FACILITY_CASE: FACILITY_CASE, FACILITY_RESULT: FACILITY_RESULT
   };
   root.Engine = api;
   if (typeof module !== "undefined") module.exports = api;

@@ -11,6 +11,7 @@
     use: { medium: "credit", acq: "found", entrust: "asked", uses: [{ type: "store", result: "ok" }], relation: "none", date: "after20251223", amount: 0 },
     mule: { item: "access", role: "give", how: "sell", usedForFraud: false },
     money: { moneyCase: "mistaken", relation: "none", date: "after20251223", amount: 0 },
+    facility: { facilityCase: "vending", result: "ok" },
     fields: {}
   };
 
@@ -93,10 +94,19 @@
   }
   $("amount2").oninput = function () { S.money.amount = Number(this.value.replace(/[^0-9]/g, "")) || 0; analyze(); };
 
+  // ── 편의시설 부정이용 입력 ───────────────────────────
+  function renderFacility() {
+    var f = S.facility;
+    chips($("facilityCase"), E.FACILITY_CASE, f.facilityCase, function (k) { f.facilityCase = k; renderFacility(); });
+    chips($("facilityResult"), E.FACILITY_RESULT, f.result, function (k) { f.result = k; renderFacility(); });
+    analyze();
+  }
+
   // ── 분석 · 결과 ─────────────────────────────────────
   function currentInput() {
     if (S.mode === "mule") return Object.assign({ mode: "mule", date: "after20251223" }, S.mule);
     if (S.mode === "money") return Object.assign({ mode: "money" }, S.money);
+    if (S.mode === "facility") return Object.assign({ mode: "facility", date: "after20251223" }, S.facility);
     return Object.assign({ mode: "use" }, JSON.parse(JSON.stringify(S.use)));
   }
 
@@ -107,7 +117,7 @@
 
   function precButtons(list) {
     if (!list || !list.length) return "";
-    return '<div class="precs">' + list.map(function (p) { return '<button type="button" class="prec" data-p="' + esc(p) + '">대법원 ' + esc(p) + "</button>"; }).join("") + "</div>";
+    return '<div class="precs">' + list.map(function (p) { return '<button type="button" class="prec" data-p="' + esc(p) + '">' + esc(precLabel(p)) + "</button>"; }).join("") + "</div>";
   }
 
   function findingHtml(f) {
@@ -121,12 +131,16 @@
       precButtons(f.precs) + "</div>";
   }
 
+  // 적용 죄명 문안을 먼저, 그다음 '검토' 항목 문안 (keys.review 에 표시)
   function factKeys(r, ctx) {
     var keys = [];
-    r.findings.forEach(function (f) {
-      if (f.status !== "apply" || !f.law) return;
-      var k = G.factKey(f, ctx);
-      if (k && keys.indexOf(k) < 0) keys.push(k);
+    keys.review = {};
+    ["apply", "review"].forEach(function (st) {
+      r.findings.forEach(function (f) {
+        if (f.status !== st || !f.law) return;
+        var k = G.factKey(f, ctx);
+        if (k && keys.indexOf(k) < 0) { keys.push(k); if (st === "review") keys.review[k] = true; }
+      });
     });
     return keys;
   }
@@ -143,7 +157,7 @@
     }).join("") + "</div>";
     var body = keys.map(function (k, i) {
       var law = k.split(":")[0];
-      return '<div class="fact-head"><span>' + (i + 1) + ". " + esc(L[law].name) + '</span><button type="button" class="copy" data-i="' + i + '">복사</button></div><div class="fact" id="fact-' + i + '">' + esc(factText(G.facts[k], defaults)) + "</div>";
+      return '<div class="fact-head"><span>' + (i + 1) + ". " + esc(L[law].name) + (keys.review[k] ? ' <span class="badge b-review">검토 — 적용 시</span>' : "") + '</span><button type="button" class="copy" data-i="' + i + '">복사</button></div><div class="fact" id="fact-' + i + '">' + esc(factText(G.facts[k], defaults)) + "</div>";
     }).join("");
     return fields + body + '<p class="basis">' + esc(G.factsBasis) + "</p>";
   }
@@ -222,8 +236,8 @@
     if (!b) return;
     var no = b.getAttribute("data-p"), p = P[no];
     if (!p) return;
-    dlg.innerHTML = '<button class="close" aria-label="닫기">×</button><h3>대법원 ' + esc(p.date) + " 선고 " + esc(no) + (p.en ? " " + esc(p.en) : "") + "</h3>" +
-      '<p><b>' + esc(p.title) + "</b></p><p>" + esc(p.holding) + '</p><p><a href="' + precUrl(no) + '" target="_blank" rel="noopener">국가법령정보센터 원문 보기</a></p>';
+    dlg.innerHTML = '<button class="close" aria-label="닫기">×</button><h3>' + (p.lower ? esc(p.court) + " " + esc(p.date) + " 선고 (하급심)" : "대법원 " + esc(p.date) + " 선고 " + esc(no)) + (p.en ? " " + esc(p.en) : "") + "</h3>" +
+      '<p><b>' + esc(p.title) + "</b></p><p>" + esc(p.holding) + '</p><p><a href="' + precUrl(no) + '" target="_blank" rel="noopener">' + (p.seq ? "국가법령정보센터 원문 보기" : "관련 보도 보기") + '</a></p>';
     dlg.querySelector(".close").onclick = function () { dlg.close(); };
     if (dlg.showModal) dlg.showModal();
   });
@@ -246,7 +260,7 @@
       }).join("");
       var precs = Object.keys(P).filter(function (k) { return hit(k + " " + P[k].title + " " + P[k].holding); }).map(function (k) {
         var p = P[k];
-        return '<div class="ref-item"><h3>대법원 ' + esc(k) + " — " + esc(p.title) + '</h3><div class="meta">' + esc(p.date) + ' 선고 · <a href="' + precUrl(k) + '" target="_blank" rel="noopener">원문</a></div><p>' + esc(p.holding) + "</p></div>";
+        return '<div class="ref-item"><h3>' + esc(precLabel(k)) + " — " + esc(p.title) + '</h3><div class="meta">' + esc(p.date) + ' 선고 · <a href="' + precUrl(k) + '" target="_blank" rel="noopener">' + (p.seq ? "원문" : "보도") + '</a></div><p>' + esc(p.holding) + "</p></div>";
       }).join("");
       $("ref-list").innerHTML = '<h2 class="ref-h">법령 (' + L.meta.verified + " 원문 대조)</h2>" + (laws || '<p class="basis">검색 결과 없음</p>') + '<h2 class="ref-h">판례</h2>' + (precs || '<p class="basis">검색 결과 없음</p>');
     };
@@ -258,10 +272,11 @@
   function setMode(mode) {
     S.mode = mode;
     document.querySelectorAll(".tabs button").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-mode") === mode)); });
-    ["use", "mule", "money", "ref"].forEach(function (m) { $("mode-" + m).hidden = m !== mode; });
+    ["use", "mule", "money", "facility", "ref"].forEach(function (m) { $("mode-" + m).hidden = m !== mode; });
     if (mode === "use") renderUse();
     else if (mode === "mule") renderMule();
     else if (mode === "money") renderMoney();
+    else if (mode === "facility") renderFacility();
     else { renderRef(); analyze(); }
     window.scrollTo(0, 0);
   }

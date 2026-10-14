@@ -105,6 +105,19 @@ Object.keys(Engine.MONEY_CASE).forEach(function (c) {
   guideCheck(c, { mode: "money", moneyCase: c, relation: "none", date: "after20251223" });
   guideCombos++;
 });
+Object.keys(Engine.FACILITY_CASE).forEach(function (c) {
+  Object.keys(Engine.FACILITY_RESULT).forEach(function (res) {
+    var inp = { mode: "facility", facilityCase: c, result: res, date: "after20251223" };
+    guideCheck("facility/" + c + "/" + res, inp);
+    var r = Engine.analyze(inp), errs = checkRefs("", r);
+    if (!r.findings.length) errs.push("결과 없음");
+    if (errs.length) { fail++; console.log("✗ 편의시설 " + c + "/" + res + ": " + errs.join(", ")); }
+    guideCombos++;
+  });
+});
+// 할인 승차는 부가운임·사용내역 안내가 나와야 한다
+var gDisc = guideCheck("discount", { mode: "use", date: "after20251223", medium: "prepaid", acq: "borrowed", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] });
+if (JSON.stringify(gDisc).indexOf("부가운임") < 0 || JSON.stringify(gDisc).indexOf("사용내역") < 0) { fail++; guideFail++; console.log("✗ 할인 승차에 부가운임·사용내역 안내 없음"); }
 
 // 조건이 바뀌면 안내도 바뀌어야 한다
 function texts(g) { return JSON.stringify(g); }

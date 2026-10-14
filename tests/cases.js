@@ -120,6 +120,38 @@ var CASES = [
     input: { mode: "mule", item: "access", role: "take", how: "rent_paid", date: "after20251223" },
     expect: { apply: ["전금49④2"] } },
 
+  { name: "2001도3625 / 2002도461 훔친 후불 전화카드로 공중전화 → 편의시설부정이용 아님, 사문서부정행사",
+    input: { mode: "facility", facilityCase: "others_card", result: "ok", date: "after20251223" },
+    expect: { status: { "형법348의2": "no" }, apply: ["형법236"] } },
+
+  { name: "이물질로 자판기 물건 취득 → 편의시설부정이용",
+    input: { mode: "facility", facilityCase: "vending", result: "ok", date: "after20251223" },
+    expect: { apply: ["형법348의2"] } },
+
+  { name: "자판기 조작 실패 → 편의시설부정이용 미수도 처벌",
+    input: { mode: "facility", facilityCase: "coin_machine", result: "denied", date: "after20251223" },
+    expect: { apply: ["형법348의2"] } },
+
+  { name: "개찰구 뛰어넘기 → 경범죄 무임승차, 편의시설부정이용 검토(하급심)",
+    input: { mode: "facility", facilityCase: "gate_jump", result: "ok", date: "after20251223" },
+    expect: { apply: ["경범3①39"], status: { "형법348의2": "review" } } },
+
+  { name: "성인이 자녀 청소년 교통카드로 승차 → 컴퓨터등사용사기 검토, 카드 부정사용 아님",
+    input: { mode: "use", date: "after20251223", medium: "prepaid", acq: "borrowed", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] },
+    expect: { status: { "형법347의2": "review", "형법348의2": "review" }, notApply: ["여전70①3", "형법347의2"], noteHas: ["부산지법"] } },
+
+  { name: "경로 무임카드 타인 사용 → 편의시설부정이용 해당 여지 큼",
+    input: { mode: "use", date: "after20251223", medium: "prepaid", acq: "borrowed", relation: "none", uses: [{ type: "free_transit", result: "ok" }] },
+    expect: { status: { "형법348의2": "review" }, noteHas: ["여지가 큼"] } },
+
+  { name: "주운 청소년 교통카드로 승차 → 점유이탈물횡령 + 할인 차액 검토",
+    input: { mode: "use", date: "after20251223", medium: "prepaid", acq: "found", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] },
+    expect: { apply: ["형법360①"], status: { "형법347의2": "review" } } },
+
+  { name: "명의자 승낙받아 빌린 체크카드로 결제 → 범죄 아님",
+    input: { mode: "use", date: "after20251223", medium: "check", acq: "borrowed", relation: "none", uses: [{ type: "store", result: "ok" }] },
+    expect: { notApply: ["여전70①3", "여전70①4", "형법347"] } },
+
   { name: "신용카드 양도 → 여신전문금융업법 제70조 제4항 제3호",
     input: { mode: "mule", item: "credit", role: "give", how: "sell", date: "after20251223" },
     expect: { apply: ["여전70④3"] } }
