@@ -44,6 +44,7 @@
     <div class="step"><h2><span class="n">4</span>결과를 바꾸는 사실</h2>
       <div class="sub-q">명의자(피해자)와 피의자의 관계</div><div class="chips" id="relation"></div>
       <div class="sub-q">범행 시기</div><div class="chips" id="date"></div>
+      <div class="date-help-slot"></div>
       <div class="sub-q">피해 총액 (선택, 5억원 이상이면 특경법 안내)</div>
       <input id="amount" class="text" inputmode="numeric" placeholder="예: 350000">
     </div>
@@ -65,6 +66,7 @@
     <div class="step"><h2><span class="n">2</span>추가 사실</h2>
       <div class="sub-q">송금인(피해자)과의 관계</div><div class="chips" id="relation2"></div>
       <div class="sub-q">범행 시기</div><div class="chips" id="date2"></div>
+      <div class="date-help-slot"></div>
       <div class="sub-q">금액 (선택)</div>
       <input id="amount2" class="text" inputmode="numeric" placeholder="예: 1500000">
     </div>
@@ -76,6 +78,46 @@
   <!-- 법령·판례 -->
   <section id="mode-ref" class="mode" hidden></section>
 </main>
+
+<!-- 범행 시기 참고사항 (두 메뉴의 .date-help-slot 에 복제) -->
+<template id="date-help">
+  <details class="help">
+    <summary>범행 시기를 나눈 이유 (참고)</summary>
+    <div class="help-body">
+      <p>범행 시기에 따라 <b>적용되는 법 자체가 달라지기 때문</b>입니다. 형법 제1조 제1항에 따라 범죄는 <b>범행 당시의 법</b>으로 처벌합니다. 카드 부정사용과 직접 관련된 조항이 최근 두 번 바뀌었고, 두 개정 시점을 기준으로 세 구간이 생깁니다.</p>
+
+      <h4>1. 2025. 12. 23. — 사기 · 컴퓨터등사용사기 법정형 상향</h4>
+      <table>
+        <tr><th>범행 시기</th><th>법정형</th></tr>
+        <tr><td>2025. 12. 22. 이전</td><td>10년 이하 징역 또는 2천만원 이하 벌금</td></tr>
+        <tr><td>2025. 12. 23. 이후</td><td><b>20년 이하 징역 또는 5천만원 이하 벌금</b></td></tr>
+      </table>
+      <p>카드 부정사용 사건에서 가장 자주 나오는 죄명이 사기(가맹점 결제)와 컴퓨터등사용사기(온라인 결제 · 계좌이체)입니다. 그래서 시기를 모르면 법정형을 잘못 안내하게 됩니다.</p>
+
+      <h4>2. 2024. 6. 27. — 친족 사이 범행(친족상도례) 변경</h4>
+      <p>헌법재판소가 2024. 6. 27. 기존 조항(친족이면 형 면제)에 헌법불합치 결정을 내렸고, 2025. 12. 31. 개정됐습니다.</p>
+      <table>
+        <tr><th>범행 시기</th><th>동거가족 · 배우자 등 가까운 친족</th><th>그 밖의 친족</th></tr>
+        <tr><td>2024. 6. 26. 이전</td><td><b>형 면제</b> (구법 적용 — 대법원 2024도19846)</td><td>고소 필요</td></tr>
+        <tr><td>2024. 6. 27. 이후</td><td><b>고소 필요</b> (처벌 가능)</td><td>고소 필요</td></tr>
+      </table>
+      <p>예를 들어 자녀가 부모 카드를 훔친 경우:</p>
+      <ul>
+        <li>2024년 5월 범행이면 형이 면제됩니다.</li>
+        <li>2025년 범행이면 부모가 고소하면 처벌됩니다.</li>
+      </ul>
+      <p>현장에서 피해자에게 고소 의사를 확인해야 하는지가 여기서 갈립니다.</p>
+      <p><b>중간 구간(2024. 6. 27.~2025. 12. 22.)을 따로 둔 이유</b>는 이 기간 범행의 고소기간 특례 때문입니다. 개정법 부칙 제3조에 따라 2024. 6. 27.~2025. 12. 30. 범행은 2025. 12. 31.부터 6개월 안에 고소할 수 있었습니다. 그 기간이 이미 지났을 수 있으므로 앱이 고소 시기를 확인하라고 안내합니다. 사기 법정형도 이 구간은 구법이 적용됩니다.</p>
+
+      <h4>참고</h4>
+      <ul>
+        <li>실제 현장 신고는 대부분 최근 범행이라 기본값을 “2025. 12. 23. 이후”로 두었습니다.</li>
+        <li>시기 선택이 결과를 바꾸는 경우는 사기 · 컴퓨터등사용사기가 적용될 때와 친족 관계를 선택했을 때뿐입니다. 그 외 죄명(절도, 여신전문금융업법위반 등)은 이 기간에 바뀐 것이 없어 결과가 같습니다.</li>
+        <li>가맹점 · 은행이 피해자인 죄(가맹점 사기, ATM 절도 등)는 범행 시기와 관계없이 친족 특례가 적용되지 않습니다.</li>
+      </ul>
+    </div>
+  </details>
+</template>
 
 <footer class="foot">
   <span id="verified"></span> ·

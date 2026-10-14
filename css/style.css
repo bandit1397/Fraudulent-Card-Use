@@ -107,3 +107,18 @@ dialog .close{float:right;border:0;background:none;color:var(--muted);font-size:
 
 .foot{max-width:760px;margin:0 auto;padding:16px;font-size:12px;color:var(--muted);text-align:center}
 @media print{.top,.step,.add,.copy,.foot,.disclaimer{display:none}.block{break-inside:avoid}.block:not([open]) .body{display:block}}
+
+/* 참고사항 (클릭하여 펼침) */
+.help{margin-top:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.help > summary{cursor:pointer;padding:8px 10px;font-size:14px;color:var(--accent);font-weight:600;list-style:none}
+.help > summary::-webkit-details-marker{display:none}
+.help > summary::before{content:"ⓘ ";}
+.help > summary::after{content:" ▾";color:var(--muted)}
+.help[open] > summary::after{content:" ▴"}
+.help-body{padding:0 12px 12px;font-size:14px}
+.help-body h4{font-size:14px;margin:14px 0 6px}
+.help-body p{margin:6px 0}
+.help-body ul{margin:6px 0;padding-left:18px}
+.help-body table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+.help-body th,.help-body td{border:1px solid var(--line);padding:6px;text-align:left;vertical-align:top}
+.help-body th{background:var(--card);color:var(--muted);font-weight:600}

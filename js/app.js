@@ -284,6 +284,12 @@
     try { localStorage.setItem("theme", theme); } catch (e) {}
   };
 
+  // 범행 시기 참고사항을 두 메뉴에 붙인다
+  var helpTpl = $("date-help");
+  document.querySelectorAll(".date-help-slot").forEach(function (slot) {
+    slot.appendChild(helpTpl.content.cloneNode(true));
+  });
+
   $("verified").textContent = "법령·판례 원문 대조 " + L.meta.verified;
   if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
     navigator.serviceWorker.register("sw.js").catch(function () {});
