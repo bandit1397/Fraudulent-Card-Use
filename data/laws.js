@@ -4,7 +4,7 @@
  * 조문을 고칠 때는 tools/fetch_law.py 로 원문을 다시 받아 대조하고 verified 날짜를 바꾼다.
  */
 var LAWS = {
-  meta: { verified: "2026-10-14", appVersion: "v13", source: "국가법령정보센터 Open API (law.go.kr/DRF)" },
+  meta: { verified: "2026-10-14", appVersion: "v14", source: "국가법령정보센터 Open API (law.go.kr/DRF)" },
 
   // ── 형법 (시행 2026. 10. 2.) ─────────────────────────────
   "형법329": { law: "형법", art: "제329조", name: "절도", penalty: "6년 이하 징역 또는 1천만원 이하 벌금", attempt: "처벌 (제342조)" },
