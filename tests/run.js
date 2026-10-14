@@ -116,7 +116,13 @@ Object.keys(Engine.FACILITY_CASE).forEach(function (c) {
   });
 });
 // 할인 승차는 부가운임·사용내역 안내가 나와야 한다
-var gDisc = guideCheck("discount", { mode: "use", date: "after20251223", medium: "prepaid", acq: "borrowed", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] });
+var gDisc = guideCheck("discount", { mode: "use", date: "after20251223", medium: "discount_card", acq: "borrowed", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] });
+var dIn = { mode: "use", date: "after20251223", medium: "discount_card", acq: "borrowed", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] };
+var dR = Engine.analyze(JSON.parse(JSON.stringify(dIn)));
+dR.findings.filter(function (f) { return f.status === "review" && ["형법347의2", "형법348의2", "경범3①39"].indexOf(f.law) >= 0; }).forEach(function (f) {
+  var k = G.factKey(f, G.ctx(dIn, dR));
+  if (k !== f.law + ":discount_transit") { fail++; guideFail++; console.log("✗ 할인 승차 " + f.law + " 문안이 상황 전용이 아님: " + k); }
+});
 if (JSON.stringify(gDisc).indexOf("부가운임") < 0 || JSON.stringify(gDisc).indexOf("사용내역") < 0) { fail++; guideFail++; console.log("✗ 할인 승차에 부가운임·사용내역 안내 없음"); }
 
 // 조건이 바뀌면 안내도 바뀌어야 한다

@@ -17,7 +17,9 @@
     credit: "신용카드 (후불교통 기능 포함)",
     check: "체크카드 (직불)",
     cash: "현금카드 · 통장",
-    prepaid: "선불카드 · 선불교통카드",
+    prepaid: "선불카드 · 일반 교통카드",
+    discount_card: "청소년 · 어린이 할인 교통카드",
+    free_card: "경로 · 장애인 등 무임 교통카드",
     cardinfo: "카드번호 등 카드정보만",
     phone: "타인 휴대전화 (간편결제 · 뱅킹앱)",
     forged: "위조 · 변조 카드",
@@ -39,16 +41,18 @@
     obtained: "위조 · 변조 카드를 구입 · 입수함",
     applied: "타인 명의를 도용해 발급 신청",
     borrowed: "명의자(가족 등)에게 빌림 · 사용 승낙 있음",
-    own: "본인 명의 카드 (할인 · 무임 자격이 없어짐)",
+    own: "본인 명의 카드인데 할인 · 무임 자격이 없어짐 (성인이 됨, 자격 해제 등)",
     unknown: "취득 경위 불명"
   };
 
   // 수단별로 선택 가능한 취득 경위
   var ACQ_BY_MEDIUM = {
-    credit: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "entrusted", "borrowed", "own", "unknown"],
-    check: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "entrusted", "borrowed", "own", "unknown"],
+    credit: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "entrusted", "borrowed", "unknown"],
+    check: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "entrusted", "borrowed", "unknown"],
     cash: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "entrusted", "unknown"],
-    prepaid: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "borrowed", "own", "unknown"],
+    prepaid: ["found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "borrowed", "unknown"],
+    discount_card: ["borrowed", "own", "found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "unknown"],
+    free_card: ["borrowed", "own", "found", "stolen", "temp", "received", "robbed", "extorted", "deceived", "unknown"],
     cardinfo: ["info_illegal", "info_known", "found", "stolen"],
     phone: ["stolen", "found", "temp", "entrusted", "info_known", "robbed", "unknown"],
     forged: ["made", "obtained"],
@@ -64,15 +68,17 @@
     online: "온라인 · 앱 결제 / 비대면 대출",
     bank_transfer: "모바일 · 인터넷뱅킹 계좌이체",
     transit: "지하철 · 버스 승차",
-    discount_transit: "청소년 · 어린이 할인 교통카드로 승차 (할인 대상 아님)",
-    free_transit: "경로 · 장애인 등 무임 교통카드로 승차 (무임 대상 아님)"
+    discount_transit: "성인 등 할인 대상이 아닌 사람이 지하철 · 버스 승차",
+    free_transit: "무임 대상이 아닌 사람이 지하철 · 버스 승차"
   };
 
   var USES_BY_MEDIUM = {
-    credit: ["store", "kiosk", "cash_service", "atm_transfer", "online", "transit", "discount_transit"],
-    check: ["store", "kiosk", "atm_cash", "atm_transfer", "online", "transit", "discount_transit"],
+    credit: ["store", "kiosk", "cash_service", "atm_transfer", "online", "transit"],
+    check: ["store", "kiosk", "atm_cash", "atm_transfer", "online", "transit"],
     cash: ["atm_cash", "atm_transfer"],
-    prepaid: ["store", "kiosk", "transit", "discount_transit", "free_transit"],
+    prepaid: ["store", "kiosk", "transit"],
+    discount_card: ["discount_transit", "store", "kiosk"],
+    free_card: ["free_transit"],
     cardinfo: ["online"],
     phone: ["store", "online", "bank_transfer"],
     forged: ["store", "kiosk", "cash_service"],
@@ -103,6 +109,8 @@
   var isCardLike = function (m) { return m === "credit" || m === "check" || m === "forged" || m === "impersonated"; };
   // 제70조 제1항 제3·4호의 객체는 '신용카드나 직불카드'만
   var isCreditOrDebit = function (m) { return m === "credit" || m === "check"; };
+  // 잔액이 카드에 저장된 교통카드류 (여신전문금융업법 제70조 제1항 제3·4호 대상 아님)
+  var isPrepaidLike = function (m) { return m === "prepaid" || m === "discount_card" || m === "free_card"; };
   var LOST_STOLEN = ["found", "stolen", "temp", "received", "unknown"];
   var TAKEN_BY_FORCE_OR_FRAUD = ["robbed", "extorted", "deceived", "entrusted"];
 
@@ -207,14 +215,14 @@
 
     if (use.type === "discount_transit" || use.type === "free_transit") return discountTransit(inp, use);
     if (a === "borrowed" || a === "own") {
-      out.push(F("no", null, { title: "카드 사용 — 범죄 아님", reason: (a === "own" ? "본인 카드" : "명의자 승낙 범위 안의 사용") + " — 카드 부정사용 · 사기 등 불성립", notes: ["할인 · 무임 교통카드를 자격 없이 쓴 경우는 사용 행위에서 '청소년 · 어린이 할인' 또는 '경로 · 장애인 등 무임'을 선택"] }));
+      out.push(F("no", null, { title: "카드 사용 — 범죄 아님", reason: (a === "own" ? "본인 카드" : "명의자 승낙 범위 안의 사용") + " — 카드 부정사용 · 사기 등 불성립", notes: ["할인 · 무임 교통카드를 자격 없이 쓴 경우는 '1. 무엇을 썼나'에서 '청소년 · 어린이 할인 교통카드' 또는 '경로 · 장애인 등 무임 교통카드'를 선택"] }));
       return out;
     }
 
     switch (use.type) {
       // 대면 가맹점 결제
       case "store":
-        if (m === "prepaid") {
+        if (isPrepaidLike(m)) {
           out.push(F("no", "여전70①3", { title: "카드 부정사용 — 해당 없음", reason: "제70조 제1항 제3·4호의 대상은 신용카드·직불카드뿐이고 선불카드는 빠져 있음" }));
           out.push(F("review", null, { title: "선불카드 결제의 재산범죄", reason: "카드에 저장된 금액 자체를 영득한 것으로 보아 취득 단계(절도·점유이탈물횡령)에 포함되는지, 가맹점에 대한 사기가 별도로 성립하는지 판례 미확인", notes: ["전자금융거래법 제49조 제2항 제3호(분실·도난 접근매체 사용) 해당 여부도 검토 — 판례 미확인"] }));
           break;
@@ -245,7 +253,7 @@
 
       // 무인 단말기
       case "kiosk":
-        if (m === "prepaid") {
+        if (isPrepaidLike(m)) {
           out.push(F("no", "여전70①3", { title: "카드 부정사용 — 해당 없음", reason: "선불카드는 제3·4호 대상 아님" }));
           out.push(F("review", null, { title: "무인 결제의 재산범죄", reason: "판례 미확인 — 수사팀 검토" }));
           break;
@@ -330,7 +338,7 @@
 
       // 대중교통 승차
       case "transit":
-        if (m === "prepaid") {
+        if (isPrepaidLike(m)) {
           out.push(F("no", "여전70①3", { title: "카드 부정사용 — 해당 없음", reason: "선불교통카드는 제3·4호 대상(신용·직불카드)이 아님" }));
           out.push(F("review", null, { title: "승차 행위의 별도 범죄", reason: "카드 잔액은 카드 자체의 영득(절도·점유이탈물횡령)에 포함된다고 볼지, 승차마다 별도 범죄(컴퓨터등사용사기 등)로 볼지 판례 미확인", notes: ["운임은 카드로 지급되었으므로 경범죄 무임승차·철도 부가운임 대상은 아님"] }));
         } else {

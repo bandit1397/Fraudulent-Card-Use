@@ -1,12 +1,12 @@
 // 오프라인 캐시 — 파일을 고치면 VERSION 을 올린다.
-var VERSION = "v4-2026-10-14";
+var VERSION = "v6-2026-10-14";
 var FILES = [
   "./", "index.html", "css/style.css", "js/engine.js", "js/app.js",
   "data/laws.js", "data/precedents.js", "data/guides.js",
   "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png"
 ];
 self.addEventListener("install", function (e) {
-  e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
+  e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(FILES.map(function (f) { return new Request(f, { cache: "reload" }); })); }).then(function () { return self.skipWaiting(); }));
 });
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
@@ -16,7 +16,8 @@ self.addEventListener("activate", function (e) {
 // 네트워크 우선, 실패하면 캐시 (법령 데이터가 갱신되면 바로 반영되도록)
 self.addEventListener("fetch", function (e) {
   if (e.request.method !== "GET" || new URL(e.request.url).origin !== location.origin) return;
-  e.respondWith(fetch(e.request).then(function (res) {
+  // 브라우저 HTTP 캐시를 거치지 않고 서버에 확인 (법령 데이터가 바뀌면 바로 반영)
+  e.respondWith(fetch(e.request.url, { cache: "no-cache" }).then(function (res) {
     var copy = res.clone();
     caches.open(VERSION).then(function (c) { c.put(e.request, copy); });
     return res;

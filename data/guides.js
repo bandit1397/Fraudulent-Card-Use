@@ -19,13 +19,14 @@ var GUIDES = (function () {
   var isFac = function (ctx) { return ctx.mode === "facility"; };
   var facIs = function (ctx, list) { return isFac(ctx) && list.indexOf(ctx.facilityCase) >= 0; };
   var lostOrStolen = function (ctx) { return ["found", "stolen", "temp", "received", "unknown", "info_illegal", "info_known"].indexOf(ctx.acq) >= 0; };
-  var OBJ = { credit: "신용카드", check: "체크카드", cash: "현금카드 · 통장", prepaid: "교통카드", cardinfo: "카드", phone: "휴대전화", forged: "카드", impersonated: "카드" };
+  var OBJ = { credit: "신용카드", check: "체크카드", cash: "현금카드 · 통장", prepaid: "교통카드", discount_card: "청소년(어린이)용 교통카드", free_card: "무임 교통카드", cardinfo: "카드", phone: "휴대전화", forged: "카드", impersonated: "카드" };
   // 목적격 조사까지 붙인 대상 이름 (받침 있으면 '을', 없으면 '를')
   var obj = function (ctx) {
     var w = OBJ[ctx.medium] || "카드", code = w.charCodeAt(w.length - 1) - 0xac00;
     return w + (code >= 0 && code <= 11171 && code % 28 ? "을" : "를");
   };
-  var physicalCard = function (ctx) { return ["credit", "check", "cash", "prepaid", "forged", "impersonated"].indexOf(ctx.medium) >= 0; };
+  var physicalCard = function (ctx) { return ["credit", "check", "cash", "prepaid", "discount_card", "free_card", "forged", "impersonated"].indexOf(ctx.medium) >= 0; };
+  var transitCard = function (ctx) { return ["prepaid", "discount_card", "free_card"].indexOf(ctx.medium) >= 0; };
 
   // ── 현장 조치 ─────────────────────────────────────────
   var ACTIONS = [
@@ -39,7 +40,7 @@ var GUIDES = (function () {
     { when: function (c) { return isUse(c) && c.medium === "impersonated"; }, t: "카드 발급 경위 확인", d: "카드사에 발급신청서·본인확인 기록·발급 채널 회신 요청" },
     { when: function (c) { return isUse(c) && ["credit", "check", "cash", "impersonated", "cardinfo"].indexOf(c.medium) >= 0; }, t: "명의자에게 즉시 카드 정지 안내", d: "카드사 분실·도난 신고 시각을 기록 — 사용 시각과 비교하는 핵심 자료" },
     { when: function (c) { return isUse(c) && c.medium === "phone"; }, t: "명의자에게 계정 보호 안내", d: "휴대전화 분실 신고, 뱅킹앱·간편결제 비밀번호 변경, 인증서 폐기, 등록 카드 정지" },
-    { when: function (c) { return isUse(c) && c.medium === "prepaid"; }, t: "교통카드 사용 정지 · 잔액 확인", d: "기명(등록) 카드인지 확인 — 등록 카드는 운영사에 사용 정지·잔액 확인 요청" },
+    { when: function (c) { return isUse(c) && transitCard(c) && c.acq !== "own" && c.acq !== "borrowed"; }, t: "교통카드 사용 정지 · 잔액 확인", d: "기명(등록) 카드인지 확인 — 등록 카드는 운영사에 사용 정지·잔액 확인 요청" },
     { when: function (c) { return isUse(c) && anyUse(c, ["store", "kiosk", "cash_service", "online", "transit"]); }, t: "승인내역 확보", d: "명의자 휴대전화 결제 알림, 카드사 앱의 승인내역(일시·가맹점·금액·승인번호) 캡처 또는 출력 협조" },
     { when: function (c) { return isUse(c) && anyUse(c, ["atm_transfer", "bank_transfer"]); }, t: "이체 피해금 보전 안내", d: "명의자 거래 은행에 사고 신고, 수취 계좌 은행에 피해 사실 통보 요청 — 수취 계좌 명의인 확인" },
     { when: function (c) { return isUse(c) && anyUse(c, ["store", "kiosk", "atm_cash", "cash_service", "atm_transfer", "transit"]); }, t: "CCTV 보존 요청", d: "가맹점·ATM·역사 CCTV는 보존기간이 짧으므로 출동 당일 보존을 요청" },
@@ -118,7 +119,7 @@ var GUIDES = (function () {
     { when: isUse, q: "피의자를 아는지 — 친족 · 동거 여부" },
     { when: function (c) { return isUse(c) && c.acq !== "entrusted" && c.acq !== "deceived"; }, q: "사용을 허락한 적이 있는지" },
     { when: isUse, q: "피해 금액, 승인 · 거절 내역" },
-    { when: function (c) { return isUse(c) && c.medium === "prepaid"; }, q: "교통카드 등록(기명) 여부와 남아 있던 잔액" },
+    { when: function (c) { return isUse(c) && transitCard(c); }, q: "교통카드 등록(기명) 여부와 남아 있던 잔액" },
     { when: discount, q: "(역무원 · 운전기사) 적발 경위 — 단말기 표시 · 안내음, 신분 확인 결과" },
     { when: discount, q: "(운영기관) 해당 카드의 이전 부정승차 이력과 운임 차액" },
     { when: function (c) { return discount(c) && c.acq === "borrowed"; }, q: "(카드 명의자) 카드를 빌려준 경위, 할인 카드인 줄 알고 쓰게 했는지" },
@@ -219,11 +220,12 @@ var GUIDES = (function () {
     "여전70①6:online": "피의자는 {일시}경 {장소}에서 ○○(피싱 문자 · 몰래 촬영 등)의 방법으로 알아낸 {명의자} 명의의 신용카드 정보를 '{상호}' 결제화면에 입력하여 {물품} 대금 {금액}원을 결제하였다.\n이로써 피의자는 거짓이나 그 밖의 부정한 방법으로 알아낸 타인의 신용카드 정보를 이용하여 신용카드로 거래하였다.",
 
     // 할인 · 무임 교통카드
-    "형법347의2:discount_transit": "피의자는 사실은 성인으로서 청소년(어린이) 할인 운임 대상이 아니다.\n그럼에도 피의자는 {일시}경 {장소}에 있는 {상호} 개찰구(버스 단말기)에서 {명의자} 명의의 청소년(어린이)용 {카드}를 단말기에 접촉하여 정상 운임 ○○원 대신 할인 운임 ○○원만 결제되도록 한 것을 비롯하여, 별지 범죄일람표 기재와 같이 총 {횟수}회에 걸쳐 같은 방법으로 운임 차액 합계 {금액}원을 지급하지 아니하였다.\n이로써 피의자는 컴퓨터등 정보처리장치에 권한 없이 정보를 입력하여 정보처리를 하게 함으로써 피해자 {상호}로부터 같은 금액 상당의 재산상 이익을 취득하였다.",
-    "형법347의2:free_transit": "피의자는 사실은 경로(장애인) 무임 승차 대상이 아니다.\n그럼에도 피의자는 {일시}경 {장소}에 있는 {상호} 개찰구에서 {명의자} 명의의 무임 교통카드를 단말기에 접촉하여 정상 운임 ○○원을 내지 않고 무임으로 처리되도록 한 것을 비롯하여, 별지 범죄일람표 기재와 같이 총 {횟수}회에 걸쳐 같은 방법으로 운임 합계 {금액}원을 지급하지 아니하였다.\n이로써 피의자는 컴퓨터등 정보처리장치에 권한 없이 정보를 입력하여 정보처리를 하게 함으로써 피해자 {상호}로부터 같은 금액 상당의 재산상 이익을 취득하였다.",
-    "형법348의2:free_transit": "피의자는 {일시}경 {장소}에 있는 {상호} 개찰구에서 무임 승차 대상이 아님에도 {명의자} 명의의 무임 교통카드를 접촉하는 부정한 방법으로 운임 ○○원을 지급하지 아니하고 자동개집표기를 통과하여 열차에 승차한 것을 비롯하여, 총 {횟수}회에 걸쳐 운임 합계 {금액}원을 지급하지 아니하였다.\n이로써 피의자는 부정한 방법으로 대가를 지급하지 아니하고 유료자동설비를 이용하여 재산상의 이익을 취득하였다.",
-    "경범3①39:discount_transit": "피의자는 {일시}경 {장소}에서 {상호} 지하철(버스)에 승차하면서 할인 대상이 아님에도 청소년(어린이)용 교통카드로 결제하여, 정당한 이유 없이 정상 운임과의 차액 {금액}원을 치르지 아니하였다.",
-    "경범3①39:free_transit": "피의자는 {일시}경 {장소}에서 {상호} 지하철(버스)에 승차하면서 무임 대상이 아님에도 무임 교통카드를 사용하여, 정당한 이유 없이 운임 {금액}원을 치르지 아니하였다.",
+    "형법347의2:discount_transit": "피의자는 사실은 성인으로서 청소년(어린이) 할인 운임 대상이 아니다.\n그럼에도 피의자는 {일시}경 {장소}에 있는 {상호} 개찰구(버스 단말기)에서 {명의자} 명의의 {카드}를 단말기에 접촉하여 정상 운임 ○○원 대신 할인 운임 ○○원만 결제되도록 한 것을 비롯하여, 별지 범죄일람표 기재와 같이 총 {횟수}회에 걸쳐 같은 방법으로 운임 차액 합계 {금액}원을 지급하지 아니하였다.\n이로써 피의자는 컴퓨터등 정보처리장치에 권한 없이 정보를 입력하여 정보처리를 하게 함으로써 피해자 {상호}로부터 같은 금액 상당의 재산상 이익을 취득하였다.",
+    "형법347의2:free_transit": "피의자는 사실은 경로(장애인) 무임 승차 대상이 아니다.\n그럼에도 피의자는 {일시}경 {장소}에 있는 {상호} 개찰구에서 {명의자} 명의의 {카드}를 단말기에 접촉하여 정상 운임 ○○원을 내지 않고 무임으로 처리되도록 한 것을 비롯하여, 별지 범죄일람표 기재와 같이 총 {횟수}회에 걸쳐 같은 방법으로 운임 합계 {금액}원을 지급하지 아니하였다.\n이로써 피의자는 컴퓨터등 정보처리장치에 권한 없이 정보를 입력하여 정보처리를 하게 함으로써 피해자 {상호}로부터 같은 금액 상당의 재산상 이익을 취득하였다.",
+    "형법348의2:free_transit": "피의자는 {일시}경 {장소}에 있는 {상호} 개찰구에서 무임 승차 대상이 아님에도 {명의자} 명의의 {카드}를 접촉하는 부정한 방법으로 운임 ○○원을 지급하지 아니하고 자동개집표기를 통과하여 열차에 승차한 것을 비롯하여, 총 {횟수}회에 걸쳐 운임 합계 {금액}원을 지급하지 아니하였다.\n이로써 피의자는 부정한 방법으로 대가를 지급하지 아니하고 유료자동설비를 이용하여 재산상의 이익을 취득하였다.",
+    "형법348의2:discount_transit": "피의자는 {일시}경 {장소}에 있는 {상호} 개찰구에서 할인 대상이 아님에도 {명의자} 명의의 {카드}를 접촉하는 부정한 방법으로 정상 운임과의 차액 ○○원을 지급하지 아니하고 자동개집표기를 통과하여 열차에 승차한 것을 비롯하여, 총 {횟수}회에 걸쳐 운임 차액 합계 {금액}원을 지급하지 아니하였다.\n이로써 피의자는 부정한 방법으로 대가를 지급하지 아니하고 유료자동설비를 이용하여 재산상의 이익을 취득하였다.",
+    "경범3①39:discount_transit": "피의자는 {일시}경 {장소}에서 {상호} 지하철(버스)에 승차하면서 할인 대상이 아님에도 {카드}로 결제하여, 정당한 이유 없이 정상 운임과의 차액 {금액}원을 치르지 아니하였다.",
+    "경범3①39:free_transit": "피의자는 {일시}경 {장소}에서 {상호} 지하철(버스)에 승차하면서 무임 대상이 아님에도 {카드}를 사용하여, 정당한 이유 없이 운임 {금액}원을 치르지 아니하였다.",
 
     // 편의시설 부정이용
     "형법348의2": "피의자는 {일시}경 {장소}에 있는 '{상호}'의 ○○(자동판매기 · 코인기기 등)에 ○○(외국 동전 · 이물질 등)을 넣는 부정한 방법으로 대가를 지급하지 아니하고 시가 {금액}원 상당의 {물품}을 취득(이용)하였다.\n이로써 피의자는 부정한 방법으로 대가를 지급하지 아니하고 유료자동설비를 이용하여 재물(재산상의 이익)을 취득하였다.",
@@ -253,7 +255,7 @@ var GUIDES = (function () {
   };
 
   // 입력칸이 비었을 때 쓰는 기본값 (수단에 따라)
-  var CARD_WORD = { credit: "신용카드", check: "체크카드", cash: "현금카드", prepaid: "교통카드", cardinfo: "신용카드", phone: "휴대전화", forged: "위조 신용카드", impersonated: "신용카드", access: "체크카드", accountinfo: "계좌정보" };
+  var CARD_WORD = { credit: "신용카드", check: "체크카드", cash: "현금카드", prepaid: "교통카드", discount_card: "청소년(어린이)용 교통카드", free_card: "무임 교통카드", cardinfo: "신용카드", phone: "휴대전화", forged: "위조 신용카드", impersonated: "신용카드", access: "체크카드", accountinfo: "계좌정보" };
 
   function factKey(f, ctx) {
     var tries = [];

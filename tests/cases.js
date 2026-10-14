@@ -137,15 +137,15 @@ var CASES = [
     expect: { apply: ["경범3①39"], status: { "형법348의2": "review" } } },
 
   { name: "성인이 자녀 청소년 교통카드로 승차 → 컴퓨터등사용사기 검토, 카드 부정사용 아님",
-    input: { mode: "use", date: "after20251223", medium: "prepaid", acq: "borrowed", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] },
+    input: { mode: "use", date: "after20251223", medium: "discount_card", acq: "borrowed", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] },
     expect: { status: { "형법347의2": "review", "형법348의2": "review" }, notApply: ["여전70①3", "형법347의2"], noteHas: ["부산지법"] } },
 
   { name: "경로 무임카드 타인 사용 → 편의시설부정이용 해당 여지 큼",
-    input: { mode: "use", date: "after20251223", medium: "prepaid", acq: "borrowed", relation: "none", uses: [{ type: "free_transit", result: "ok" }] },
+    input: { mode: "use", date: "after20251223", medium: "free_card", acq: "borrowed", relation: "none", uses: [{ type: "free_transit", result: "ok" }] },
     expect: { status: { "형법348의2": "review" }, noteHas: ["여지가 큼"] } },
 
   { name: "주운 청소년 교통카드로 승차 → 점유이탈물횡령 + 할인 차액 검토",
-    input: { mode: "use", date: "after20251223", medium: "prepaid", acq: "found", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] },
+    input: { mode: "use", date: "after20251223", medium: "discount_card", acq: "found", relation: "none", uses: [{ type: "discount_transit", result: "ok" }] },
     expect: { apply: ["형법360①"], status: { "형법347의2": "review" } } },
 
   { name: "명의자 승낙받아 빌린 체크카드로 결제 → 범죄 아님",

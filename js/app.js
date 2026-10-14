@@ -44,7 +44,14 @@
     u.uses = u.uses.filter(function (x) { return useKeys.indexOf(x.type) >= 0; });
     if (!u.uses.length) u.uses.push({ type: useKeys[0], result: "ok" });
 
-    chips($("medium"), E.MEDIA, u.medium, function (k) { u.medium = k; renderUse(); });
+    // 수단을 바꾸면 2·3단계를 그 수단의 대표 사례로 다시 시작 (예: 청소년 카드 → 빌림 · 성인 승차)
+    chips($("medium"), E.MEDIA, u.medium, function (k) {
+      if (k === u.medium) return;
+      u.medium = k;
+      u.acq = E.ACQ_BY_MEDIUM[k][0];
+      u.uses = [{ type: E.USES_BY_MEDIUM[k][0], result: "ok" }];
+      renderUse();
+    });
     chips($("acq"), E.ACQ, u.acq, function (k) { u.acq = k; renderUse(); }, acqKeys);
     $("entrust-box").hidden = u.acq !== "entrusted";
     chips($("entrust"), ENTRUST, u.entrust, function (k) { u.entrust = k; renderUse(); });
@@ -139,6 +146,8 @@
       r.findings.forEach(function (f) {
         if (f.status !== st || !f.law) return;
         var k = G.factKey(f, ctx);
+        // '검토' 항목은 그 상황 전용 문안(조항:상황)이 있을 때만 — 일반 문안은 사실관계가 어긋날 수 있다
+        if (st === "review" && k && k.indexOf(":") < 0) k = null;
         if (k && keys.indexOf(k) < 0) { keys.push(k); if (st === "review") keys.review[k] = true; }
       });
     });
