@@ -170,7 +170,7 @@
       f.notes.forEach(add);
       f.precs.forEach(function (p) { if (precs.indexOf(p) < 0) precs.push(p); });
     });
-    if (keys.review[k]) add("현장에서 확정하지 말고 수사팀 · 검사와 협의한 뒤 적용 여부를 정할 것");
+    if (keys.review[k]) add("현장에서 확정하지 말고 관계 부서와 협의한 뒤 적용 여부를 정할 것");
     if (!items.length) return "";
     var whys = [];
     keys.findings[k].forEach(function (f) { if (f.status === "review" && f.why && whys.indexOf(f.why) < 0) whys.push(f.why); });
