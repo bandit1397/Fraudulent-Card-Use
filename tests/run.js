@@ -70,6 +70,16 @@ Object.keys(Engine.ACQ_BY_MEDIUM).forEach(function (m) {
     });
   });
 });
+// ── 조문 전문: 앱이 인용하는 모든 조문의 전문이 저장되어 있는지 ─────────
+var LAW_TEXTS = require("../data/law_texts.js");
+Object.keys(LAWS).forEach(function (k) {
+  if (k === "meta" || ["형법", "여신전문금융업법", "전자금융거래법", "전기통신금융사기 피해 방지 및 피해자산 환급에 관한 특별법", "특정경제범죄 가중처벌 등에 관한 법률", "경범죄 처벌법", "철도사업법", "형사소송법"].indexOf(LAWS[k].law) < 0) return;
+  LAWS[k].art.replace(/제(\d+)조(의\d+)?/g, function (_, a, b) {
+    var t = LAW_TEXTS[LAWS[k].law + "|" + a + (b || "")];
+    if (!t || t.text.indexOf("제" + a + "조" + (b || "")) !== 0) { fail++; console.log("✗ 조문 전문 없음: " + k + " → " + LAWS[k].law + " 제" + a + "조" + (b || "")); }
+  });
+});
+
 // ── 검토 이유(대법원 판례 없음 / 사실관계 확인 필요) ─────────────
 function whyOf(inp, law) {
   var r = Engine.analyze(JSON.parse(JSON.stringify(inp)));

@@ -21,7 +21,7 @@
 결과 화면은 세 단계입니다.
 
 1. **30초 요약** — 적용 죄명과 경합 관계
-2. **단계별 검토** — 취득·사용 행위마다 적용 / 검토 / 불성립과 이유, 근거 판례(누르면 요지와 원문 링크)
+2. **단계별 검토** — 취득·사용 행위마다 적용 / 검토 / 불성립과 이유, 근거 판례(누르면 요지와 원문 링크), 법조문(누르면 조문 전문 — 인용한 항·호 강조, 인터넷 없이도 표시)
 3. **현장 조치 · 질문 목록 · 범죄사실 초안** — 선택한 수단·취득 경위·사용 행위·결과·친족 관계에 맞춰 항목이 바뀜. 입력칸을 채우면 문안이 완성되고 복사할 수 있음
 
 ## 판단 기준
@@ -41,6 +41,7 @@ js/app.js             화면 동작
 data/laws.js          조문 · 법정형 · 미수 처벌 여부
 data/precedents.js    판례 요지 · 원문 링크
 data/guides.js        현장 조치 · 증거 · 질문 · 범죄사실 템플릿
+data/law_texts.js     조문 전문 (tools/build_law_texts.py 가 원문에서 자동 생성)
 tests/cases.js        판례 사안 회귀 테스트
 tests/run.js          테스트 실행기 (모든 선택지 조합 검사 포함)
 tools/*.py            법령·판례 원문 내려받기 · 검색 · 조문 자동 대조(verify_laws.py)
@@ -58,7 +59,7 @@ node tests/run.js
 
 ## 수정하는 방법
 
-- 법이 바뀌면: `data/laws.js` 수정 → `meta.verified` 날짜 변경 → `meta.appVersion` 과 `sw.js` 의 `VERSION` 함께 올리기 → `node tests/run.js`
+- 법이 바뀌면: 원문 다시 받기(`tools/fetch_law.py`) → `data/laws.js` 수정 → `python tools/build_law_texts.py <폴더>` 로 조문 전문 갱신 → `python tools/verify_laws.py <폴더>` → `meta.verified` 날짜 변경 → `meta.appVersion` 과 `sw.js` 의 `VERSION` 함께 올리기 → `node tests/run.js`
 - 판례 추가: `data/precedents.js` 에 추가 → 엔진 규칙 반영 → `tests/cases.js` 에 사안 추가
 - 현장 조치·질문 수정: `data/guides.js` 의 `ACTIONS`, `Q_VICTIM`, `Q_SUSPECT` (각 항목의 `when` 이 표시 조건)
 - 범죄사실 문안 수정: `data/guides.js` 의 `FACTS` (`조항:사용유형` → `조항:상황` → `조항` 순서로 찾음)

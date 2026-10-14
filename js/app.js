@@ -132,9 +132,10 @@
     var badge = { apply: '<span class="badge b-apply">적용</span>', review: '<span class="badge b-review">검토</span>', no: '<span class="badge b-no">불성립</span>' }[f.status] +
       (f.status === "review" && f.why ? '<span class="why why-' + f.why + '">' + esc(E.WHY[f.why]) + "</span>" : "");
     var name = f.title || (L[f.law] ? L[f.law].name : "");
-    var meta = [lawLabel(f.law), f.status === "apply" ? f.penalty : ""].filter(Boolean).join(" · ");
+    var meta = [f.status === "apply" ? f.penalty : ""].filter(Boolean).join(" · ");
+    var lawBtn = f.law && L[f.law] ? lawButton(f.law) : "";
     return '<div class="finding ' + f.status + '"><h3>' + badge + esc(name) + "</h3>" +
-      (meta ? '<div class="meta">' + esc(meta) + "</div>" : "") +
+      (lawBtn || meta ? '<div class="meta">' + lawBtn + (lawBtn && meta ? " · " : "") + esc(meta) + "</div>" : "") +
       (f.reason ? '<p class="reason">' + esc(f.reason) + "</p>" : "") +
       (f.notes.length ? '<ul class="fnotes">' + f.notes.map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" : "") +
       precButtons(f.precs) + "</div>";
@@ -192,7 +193,7 @@
       var sub = [];
       if (keys.review[k] && f0.title && f0.title !== L[f0.law].name) sub.push(f0.title);
       if (f0.useType && E.USES[f0.useType]) sub.push(E.USES[f0.useType].split(" (")[0]);
-      return '<div class="fact-head" id="draft-' + i + '" data-law="' + esc(f0.law) + '"><span>' + (i + 1) + ". " + esc(name) + (keys.review[k] ? ' <span class="badge b-review">검토</span>' + (f0.why ? '<span class="why why-' + f0.why + '">' + esc(E.WHY[f0.why]) + "</span>" : "") : ' <span class="badge b-apply">적용</span>') +
+      return '<div class="fact-head" id="draft-' + i + '" data-law="' + esc(f0.law) + '"><span>' + (i + 1) + ". " + esc(name) + " " + lawButton(f0.law, "조문") + (keys.review[k] ? ' <span class="badge b-review">검토</span>' + (f0.why ? '<span class="why why-' + f0.why + '">' + esc(E.WHY[f0.why]) + "</span>" : "") : ' <span class="badge b-apply">적용</span>') +
         (sub.length ? '<small class="fact-sub">' + esc(sub.join(" · ")) + "</small>" : "") + '</span><button type="button" class="copy" data-i="' + i + '">복사</button></div>' +
         '<div class="fact" id="fact-' + i + '">' + esc(factText(G.facts[k], defaults)) + "</div>" + cautionHtml(k, keys);
     }).join("");
@@ -290,10 +291,69 @@
     });
   }
 
+  // ── 조문 전문 창 ─────────────────────────────────────
+  // 누를 수 있는 조문 표시 (label 을 주면 그 글자로, 없으면 '법령명 제○조')
+  function lawButton(key, label) {
+    var l = L[key];
+    if (!l) return "";
+    return '<button type="button" class="lawlink" data-law="' + esc(key) + '" title="조문 전문 보기">' + esc(label || (l.law + " " + l.art)) + " 📖</button>";
+  }
+
+  function lawGoKr(law, art) {
+    return "https://www.law.go.kr/" + encodeURIComponent("법령") + "/" + encodeURIComponent(law) + "/" + encodeURIComponent(art);
+  }
+
+  // 인용한 항 · 호를 강조: "제70조 제1항 제3호" → 제70조 본문 중 ①의 3호
+  function highlightArticle(text, artLabel, artNo) {
+    var m = artLabel.match(new RegExp("제" + artNo.replace(/의(\d+)$/, "조의$1").replace(/^(\d+)$/, "$1조") + "\\s*제(\\d+)항(?:\\s*제(\\d+)호)?"));
+    var hang = m ? Number(m[1]) : null, ho = m && m[2] ? m[2] : null;
+    var CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+    var cur = null;
+    return text.split("\n").map(function (line) {
+      var first = line.trim().charAt(0), idx = CIRCLED.indexOf(first);
+      if (idx >= 0) cur = idx + 1;
+      var hit = false;
+      if (hang && cur === hang) {
+        if (!ho && idx >= 0) hit = true;
+        if (ho && new RegExp("^\\s{2}" + ho + "\\.\\s").test(line)) hit = true;
+      }
+      return hit ? '<mark>' + esc(line) + "</mark>" : esc(line);
+    }).join("\n");
+  }
+
+  function showLaw(key) {
+    var l = L[key];
+    if (!l) return;
+    var nums = [];
+    l.art.replace(/제(\d+)조(의\d+)?/g, function (_, a, b) { nums.push(a + (b || "")); });
+    var arts = nums.map(function (n) {
+      var t = window.LAW_TEXTS && LAW_TEXTS[l.law + "|" + n];
+      var label = "제" + n.replace(/의(\d+)$/, "조의$1").replace(/^(\d+)$/, "$1조");
+      return '<div class="law-art"><div class="law-art-head"><b>' + esc(l.law) + " " + esc(label) + '</b><a href="' + lawGoKr(l.law, label) + '" target="_blank" rel="noopener">국가법령정보센터 ↗</a></div>' +
+        (t ? '<pre class="law-text">' + highlightArticle(t.text, l.art, n) + "</pre>" : '<p class="basis">조문 전문이 저장되어 있지 않습니다. 오른쪽 링크로 확인하세요.</p>') + "</div>";
+    }).join("");
+    var info = [
+      l.penalty ? "<p><b>법정형</b> " + esc(l.penalty) + "</p>" : "",
+      l.penaltyOld ? "<p><b>구 법정형</b> " + esc(l.penaltyOld) + "</p>" : "",
+      l.attempt ? "<p><b>미수</b> " + esc(l.attempt) + "</p>" : "",
+      l.note ? "<p>" + esc(l.note) + "</p>" : ""
+    ].join("");
+    var ef = nums.length && window.LAW_TEXTS && LAW_TEXTS[l.law + "|" + nums[0]] ? LAW_TEXTS[l.law + "|" + nums[0]].ef : "";
+    dlg.innerHTML = '<button class="close" aria-label="닫기">×</button><h3>' + esc(l.name) + '</h3><div class="meta">' + esc(l.law + " " + l.art) + "</div>" + info + arts +
+      '<p class="basis">국가법령정보센터 현행 원문' + (ef ? " (시행 " + ef.replace(/(\d{4})(\d{2})(\d{2})/, "$1. $2. $3.") + ")" : "") + " · " + esc(L.meta.verified) + " 대조. 강조 표시는 앱이 인용한 항 · 호입니다.</p>";
+    dlg.querySelector(".close").onclick = function () { dlg.close(); };
+    if (dlg.showModal && !dlg.open) dlg.showModal();
+    dlg.scrollTop = 0;
+    var mk = dlg.querySelector("mark");
+    if (mk) mk.scrollIntoView({ block: "center" });
+  }
+
   // ── 판례 팝업 ───────────────────────────────────────
   var dlg = document.createElement("dialog");
   document.body.appendChild(dlg);
   document.addEventListener("click", function (e) {
+    var lb = e.target.closest(".lawlink");
+    if (lb) { e.stopPropagation(); showLaw(lb.getAttribute("data-law")); return; }
     var b = e.target.closest(".prec");
     if (!b) return;
     var no = b.getAttribute("data-p"), p = P[no];
@@ -315,7 +375,7 @@
       var hit = function (s) { return !q || s.indexOf(q) >= 0; };
       var laws = lawKeys.filter(function (k) { var l = L[k]; return hit([l.law, l.art, l.name, l.text || "", l.penalty || "", l.note || ""].join(" ")); }).map(function (k) {
         var l = L[k];
-        return '<div class="ref-item"><h3>' + esc(l.name) + '</h3><div class="meta">' + esc(l.law + " " + l.art) + "</div>" +
+        return '<div class="ref-item"><h3>' + esc(l.name) + '</h3><div class="meta">' + lawButton(k) + "</div>" +
           (l.text ? "<p>" + esc(l.text) + "</p>" : "") + (l.penalty ? "<p><b>법정형</b> " + esc(l.penalty) + "</p>" : "") +
           (l.penaltyOld ? "<p><b>구 법정형</b> " + esc(l.penaltyOld) + "</p>" : "") + (l.attempt ? "<p><b>미수</b> " + esc(l.attempt) + "</p>" : "") +
           (l.note ? "<p>" + esc(l.note) + "</p>" : "") + "</div>";

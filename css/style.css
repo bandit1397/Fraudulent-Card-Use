@@ -248,3 +248,14 @@ button.crime-tag{font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 :root[data-theme="dark"] .feedback-btn{color:#0f1216}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .feedback-btn{color:#0f1216}}
 @media print{.feedback{display:none}}
+
+/* 조문 보기 */
+.lawlink{font:inherit;font-size:13px;color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent);border-radius:6px;padding:1px 7px;cursor:pointer;text-decoration:none;font-weight:600}
+.lawlink:hover{filter:brightness(1.05);text-decoration:underline}
+.fact-head .lawlink{font-size:12px;vertical-align:1px}
+dialog{max-height:85vh;overflow-y:auto}
+.law-art{border:1px solid var(--line);border-radius:10px;margin:10px 0;overflow:hidden}
+.law-art-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.law-art-head a{font-size:12px;white-space:nowrap}
+.law-text{margin:0;padding:10px;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;font-family:inherit;font-size:13.5px;line-height:1.7;background:var(--card);color:var(--ink)}
+.law-text mark{background:var(--warn-soft);color:var(--ink);border-left:3px solid var(--warn);padding:1px 2px;display:inline-block;width:100%}
